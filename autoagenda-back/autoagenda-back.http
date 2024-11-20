@@ -1,0 +1,6 @@
+@autoagenda_back_HostAddress = http://localhost:5204
+
+GET {{autoagenda_back_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
