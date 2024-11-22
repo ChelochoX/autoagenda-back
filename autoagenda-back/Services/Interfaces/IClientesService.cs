@@ -1,4 +1,5 @@
 ﻿using autoagenda_back.DTOs;
+using autoagenda_back.Request;
 
 namespace autoagenda_back.Services.Interfaces
 {
@@ -6,6 +7,6 @@ namespace autoagenda_back.Services.Interfaces
     {
         Task<ClienteDTO> BuscarClientePorCorreo(string correo);
         Task ActualizarCliente(int idCliente, ClienteDTO cliente);
-        Task<int> InsertarClienteAsync(ClienteDTO cliente);
+        Task<int> InsertarClienteAsync(ClienteRequest cliente);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using autoagenda_back.DTOs;
 using autoagenda_back.Exceptions;
+using autoagenda_back.Request;
 using autoagenda_back.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -43,7 +44,7 @@ public class ClientesController : ControllerBase
     [SwaggerOperation(
     Summary = "Registra un nuevo cliente",
     Description = "Permite registrar un nuevo cliente en el sistema.")]
-    public async Task<IActionResult> InsertarClienteAsync([FromBody] ClienteDTO cliente)
+    public async Task<IActionResult> InsertarClienteAsync([FromBody] ClienteRequest cliente)
     {    
         var idCliente = await _service.InsertarClienteAsync(cliente);
 

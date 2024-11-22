@@ -1,4 +1,6 @@
-﻿namespace autoagenda_back.Configurations;
+﻿using autoagenda_back.Middlewares;
+
+namespace autoagenda_back.Configurations;
 
 public static class AppExtensions
 {

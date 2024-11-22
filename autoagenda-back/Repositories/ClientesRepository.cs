@@ -2,6 +2,7 @@
 using autoagenda_back.DTOs;
 using autoagenda_back.Exceptions;
 using autoagenda_back.Repositories.Interfaces;
+using autoagenda_back.Request;
 using Dapper;
 using Microsoft.Data.SqlClient;
 
@@ -101,7 +102,7 @@ public class ClientesRepository : IClientesRepository
         }
     }
 
-    public async Task<int> InsertarCliente(ClienteDTO cliente)
+    public async Task<int> InsertarCliente(ClienteRequest cliente)
     {
         _logger.LogInformation("Inicio del proceso para insertar un nuevo cliente: {NombreCompleto}", cliente.NombreCompleto);
 

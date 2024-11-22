@@ -1,4 +1,5 @@
-﻿using Microsoft.Data.SqlClient;
+﻿using autoagenda_back.Exceptions;
+using Microsoft.Data.SqlClient;
 using System.Data;
 
 namespace autoagenda_back.Data;

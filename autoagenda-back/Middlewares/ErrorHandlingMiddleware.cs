@@ -1,4 +1,5 @@
 ﻿using autoagenda_back.Exceptions;
+using FluentValidation;
 using System.Net;
 using System.Text.Json;
 

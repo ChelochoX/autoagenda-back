@@ -1,6 +1,6 @@
 ﻿using autoagenda_back.DTOs;
-using autoagenda_back.Exceptions;
 using autoagenda_back.Repositories.Interfaces;
+using autoagenda_back.Request;
 using autoagenda_back.Services.Interfaces;
 
 namespace autoagenda_back.Services;
@@ -26,7 +26,7 @@ public class ClientesService : IClientesService
         await _repository.ActualizarCliente(idCliente, cliente);        
     }
 
-    public async Task<int> InsertarClienteAsync(ClienteDTO cliente)
+    public async Task<int> InsertarClienteAsync(ClienteRequest cliente)
     {
         return await _repository.InsertarCliente(cliente);         
       
