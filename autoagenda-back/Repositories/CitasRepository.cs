@@ -22,8 +22,8 @@ public class CitasRepository : ICitasRepository
         _logger.LogInformation("Inicio del proceso para insertar una nueva cita.");
 
         string query = @"
-            INSERT INTO Citas (id_vehiculo, fecha, hora, id_tipo_servicio, estado)
-            VALUES (@IdVehiculo, @Fecha, @Hora, @IdTipoServicio, @Estado);
+            INSERT INTO Citas (id_vehiculo, fecha, hora, id_tipo_servicio, estado, descripcion)
+            VALUES (@IdVehiculo, @Fecha, @Hora, @IdTipoServicio, @Estado, @Descripcion);
             SELECT CAST(SCOPE_IDENTITY() AS INT)";
 
         try
@@ -48,7 +48,7 @@ public class CitasRepository : ICitasRepository
 
         string query = @"
             SELECT c.id_cita AS IdCita, c.id_vehiculo AS IdVehiculo, c.fecha, c.hora, 
-                   c.id_tipo_servicio AS IdTipoServicio, c.estado, 
+                   c.id_tipo_servicio AS IdTipoServicio, c.estado, c.descripcion,
                    ts.nombre AS TipoServicioNombre, ts.descripcion AS TipoServicioDescripcion, ts.costo AS TipoServicioCosto
             FROM Citas c
             INNER JOIN TipoServicio ts ON c.id_tipo_servicio = ts.id_tipo_servicio
@@ -87,7 +87,7 @@ public class CitasRepository : ICitasRepository
 
         string query = @"
             SELECT c.id_cita AS IdCita, c.id_vehiculo AS IdVehiculo, c.fecha, c.hora, 
-                   c.id_tipo_servicio AS IdTipoServicio, c.estado, 
+                   c.id_tipo_servicio AS IdTipoServicio, c.estado, c.descripcion,
                    ts.nombre AS TipoServicioNombre, ts.descripcion AS TipoServicioDescripcion, ts.costo AS TipoServicioCosto
             FROM Citas c
             INNER JOIN TipoServicio ts ON c.id_tipo_servicio = ts.id_tipo_servicio
@@ -119,14 +119,15 @@ public class CitasRepository : ICitasRepository
                 fecha = @Fecha,
                 hora = @Hora,
                 id_tipo_servicio = @IdTipoServicio,
-                estado = @Estado
+                estado = @Estado,
+                descripcion = @Descripcion
             WHERE id_cita = @IdCita";
 
         try
         {
             using (var connection = _conexion.CreateSqlConnection())
             {
-                var filasAfectadas = await connection.ExecuteAsync(query, new { cita.IdVehiculo, cita.Fecha, cita.Hora, cita.IdTipoServicio, cita.Estado, idCita });
+                var filasAfectadas = await connection.ExecuteAsync(query, new { cita.IdVehiculo, cita.Fecha, cita.Hora, cita.IdTipoServicio, cita.Estado, cita.Descripcion, idCita });
 
                 if (filasAfectadas == 0)
                 {

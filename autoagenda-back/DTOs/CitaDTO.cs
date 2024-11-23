@@ -7,6 +7,7 @@ public class CitaDTO
     public DateTime Fecha { get; set; } 
     public TimeSpan Hora { get; set; } 
     public int IdTipoServicio { get; set; } 
-    public string Estado { get; set; } 
+    public string Estado { get; set; }
+    public string Descripcion { get; set; }
 
 }
