@@ -1,5 +1,4 @@
 ﻿using autoagenda_back.DTOs;
-using autoagenda_back.Exceptions;
 using autoagenda_back.Request;
 using autoagenda_back.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;

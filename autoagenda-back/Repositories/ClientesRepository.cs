@@ -4,7 +4,6 @@ using autoagenda_back.Exceptions;
 using autoagenda_back.Repositories.Interfaces;
 using autoagenda_back.Request;
 using Dapper;
-using Microsoft.Data.SqlClient;
 
 namespace autoagenda_back.Repositories;
 
