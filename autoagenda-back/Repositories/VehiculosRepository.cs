@@ -183,4 +183,35 @@ public class VehiculosRepository : IVehiculosRepository
             throw;
         }
     }
+
+    public async Task<IEnumerable<VehiculoDTO>> ObtenerTodosLosVehiculosAsync()
+    {
+        _logger.LogInformation("Inicio del proceso para obtener todos los vehículos.");
+
+        string query = @"
+                SELECT 
+                    id_vehiculo AS IdVehiculo,
+                    id_cliente AS IdCliente,
+                    marca AS Marca,
+                    modelo AS Modelo,
+                    anho AS Anho,
+                    placa AS Placa
+                FROM Vehiculos";
+
+        try
+        {
+            using (var connection = _conexion.CreateSqlConnection())
+            {
+                var vehiculos = await connection.QueryAsync<VehiculoDTO>(query);
+                _logger.LogInformation("Se han obtenido {Cantidad} vehículos.", vehiculos.Count());
+                return vehiculos;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al intentar obtener los vehículos.");
+            throw;
+        }
+    }
+
 }

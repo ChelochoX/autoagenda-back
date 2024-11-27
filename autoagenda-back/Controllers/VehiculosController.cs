@@ -49,5 +49,13 @@ namespace autoagenda_back.Controllers
             await _service.EliminarVehiculoAsync(idVehiculo);
             return Ok(new { mensaje = "Vehículo eliminado exitosamente." });
         }
+
+        [HttpGet("modelos")]
+        public async Task<IActionResult> ObtenerTodosLosVehiculosAsync()
+        {          
+            var vehiculos = await _service.ObtenerTodosLosVehiculosAsync();             
+            return Ok(vehiculos);          
+        }
+
     }
 }

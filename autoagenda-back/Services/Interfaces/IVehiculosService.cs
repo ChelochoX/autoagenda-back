@@ -13,4 +13,6 @@ public interface IVehiculosService
     Task ActualizarVehiculoAsync(int idVehiculo, VehiculoDTO vehiculo);
        
     Task EliminarVehiculoAsync(int idVehiculo);
+
+    Task<IEnumerable<VehiculoDTO>> ObtenerTodosLosVehiculosAsync();
 }

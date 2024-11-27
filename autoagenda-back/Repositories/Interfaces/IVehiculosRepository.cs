@@ -9,4 +9,5 @@ public interface IVehiculosRepository
     Task<IEnumerable<VehiculoDTO>> ObtenerVehiculosPorClienteAsync(int idCliente);
     Task ActualizarVehiculoAsync(int idVehiculo, VehiculoDTO vehiculo);
     Task EliminarVehiculoAsync(int idVehiculo);
+    Task<IEnumerable<VehiculoDTO>> ObtenerTodosLosVehiculosAsync();
 }

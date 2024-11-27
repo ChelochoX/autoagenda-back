@@ -23,4 +23,6 @@ public class VehiculosService : IVehiculosService
 
     public async Task EliminarVehiculoAsync(int idVehiculo) => await _repository.EliminarVehiculoAsync(idVehiculo);
 
+    public async Task<IEnumerable<VehiculoDTO>> ObtenerTodosLosVehiculosAsync() => await _repository.ObtenerTodosLosVehiculosAsync();
+
 }
