@@ -1,5 +1,6 @@
 ﻿using autoagenda_back.Data;
 using autoagenda_back.DTOs;
+using autoagenda_back.Exceptions;
 using autoagenda_back.Repositories.Interfaces;
 using Dapper;
 
@@ -16,202 +17,77 @@ public class VehiculosRepository : IVehiculosRepository
         _logger = logger;
     }
 
-    public async Task<int> InsertarVehiculoAsync(VehiculoDTO vehiculo)
+    public async Task<IEnumerable<AnhoDTO>> ObtenerAnhosAsync()
     {
-        _logger.LogInformation("Inicio del proceso para insertar un nuevo vehículo.");
-
+        _logger.LogInformation("Inicio del proceso para obtener años.");
         string query = @"
-        INSERT INTO Vehiculos (id_cliente, marca, modelo, anho, placa)
-        VALUES (@IdCliente, @Marca, @Modelo, @Anho, @Placa);
-        SELECT CAST(SCOPE_IDENTITY() AS INT)";
+            SELECT 
+                id_anho AS IdAnho, 
+                anho AS Anho 
+            FROM Anhos
+            ORDER BY anho ASC";
 
         try
         {
             using (var connection = _conexion.CreateSqlConnection())
             {
-                var idVehiculo = await connection.QuerySingleAsync<int>(query, vehiculo);
-                _logger.LogInformation("Vehículo insertado exitosamente con ID: {IdVehiculo}", idVehiculo);
-                return idVehiculo;
+                return await connection.QueryAsync<AnhoDTO>(query);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al intentar insertar un nuevo vehículo.");
-            throw;
+            _logger.LogError(ex, "Error al obtener los años.");
+            throw new RepositoryException("Error al obtener los años.", ex);
         }
     }
 
-    public async Task<VehiculoDTO> ObtenerVehiculoPorIdAsync(int idVehiculo)
+    public async Task<IEnumerable<MarcaDTO>> ObtenerMarcasAsync()
     {
-        _logger.LogInformation("Inicio del proceso para obtener un vehículo con ID: {IdVehiculo}", idVehiculo);
-
+        _logger.LogInformation("Inicio del proceso para obtener marcas.");
         string query = @"
-        SELECT id_vehiculo AS IdVehiculo, id_cliente AS IdCliente, 
-               marca AS Marca, modelo AS Modelo, anho AS Anho, placa AS Placa
-        FROM Vehiculos WHERE id_vehiculo = @IdVehiculo";
+            SELECT 
+                id_marca AS IdMarca, 
+                nombre AS Nombre 
+            FROM Marcas
+            ORDER BY nombre ASC";
 
         try
         {
             using (var connection = _conexion.CreateSqlConnection())
             {
-                var vehiculo = await connection.QueryFirstOrDefaultAsync<VehiculoDTO>(query, new { idVehiculo });
-
-                if (vehiculo == null)
-                {
-                    _logger.LogWarning("No se encontró un vehículo con ID: {IdVehiculo}", idVehiculo);
-                    return null;
-                }
-
-                _logger.LogInformation("Vehículo encontrado con ID: {IdVehiculo}", idVehiculo);
-                return vehiculo;
+                return await connection.QueryAsync<MarcaDTO>(query);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al intentar obtener el vehículo con ID: {IdVehiculo}", idVehiculo);
-            throw;
+            _logger.LogError(ex, "Error al obtener las marcas.");
+            throw new RepositoryException("Error al obtener las marcas.", ex);
         }
     }
 
-    public async Task<IEnumerable<VehiculoDTO>> ObtenerVehiculosPorClienteAsync(int idCliente)
+    public async Task<IEnumerable<ModeloDTO>> ObtenerModelosPorMarcaAsync(int idMarca)
     {
-        _logger.LogInformation("Inicio del proceso para obtener vehículos del cliente con ID: {IdCliente}", idCliente);
-
+        _logger.LogInformation("Inicio del proceso para obtener modelos de la marca {IdMarca}.", idMarca);
         string query = @"
-        SELECT id_vehiculo AS IdVehiculo, id_cliente AS IdCliente, 
-               marca AS Marca, modelo AS Modelo, anho AS Anho, placa AS Placa
-        FROM Vehiculos WHERE id_cliente = @IdCliente";
+            SELECT 
+                id_modelo AS IdModelo, 
+                nombre AS Nombre, 
+                id_marca AS IdMarca
+            FROM Modelos
+            WHERE id_marca = @IdMarca
+            ORDER BY nombre ASC";
 
         try
         {
             using (var connection = _conexion.CreateSqlConnection())
             {
-                var vehiculos = await connection.QueryAsync<VehiculoDTO>(query, new { idCliente });
-
-                if (!vehiculos.Any())
-                {
-                    _logger.LogWarning("No se encontraron vehículos para el cliente con ID: {IdCliente}", idCliente);
-                    return Enumerable.Empty<VehiculoDTO>();
-                }
-
-                _logger.LogInformation("Vehículos obtenidos exitosamente para el cliente con ID: {IdCliente}", idCliente);
-                return vehiculos;
+                return await connection.QueryAsync<ModeloDTO>(query, new { IdMarca = idMarca });
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al intentar obtener los vehículos del cliente con ID: {IdCliente}", idCliente);
-            throw;
+            _logger.LogError(ex, "Error al obtener los modelos.");
+            throw new RepositoryException("Error al obtener los modelos.", ex);
         }
     }
-
-    public async Task ActualizarVehiculoAsync(int idVehiculo, VehiculoDTO vehiculo)
-    {
-        _logger.LogInformation("Inicio del proceso para actualizar el vehículo con ID: {IdVehiculo}", idVehiculo);
-
-        string query = @"
-        UPDATE Vehiculos SET
-            marca = @Marca,
-            modelo = @Modelo,
-            anho = @Anho,
-            placa = @Placa
-        WHERE id_vehiculo = @IdVehiculo";
-
-        try
-        {
-            using (var connection = _conexion.CreateSqlConnection())
-            {
-                var filasAfectadas = await connection.ExecuteAsync(query, new
-                {
-                    vehiculo.Marca,
-                    vehiculo.Modelo,
-                    vehiculo.Anho,
-                    vehiculo.Placa,
-                    idVehiculo
-                });
-
-                if (filasAfectadas == 0)
-                {
-                    _logger.LogWarning("No se encontró un vehículo con ID: {IdVehiculo} para actualizar.", idVehiculo);
-                    throw new KeyNotFoundException($"No se encontró un vehículo con ID: {idVehiculo} para actualizar.");
-                }
-
-                _logger.LogInformation("Vehículo con ID: {IdVehiculo} actualizado exitosamente.", idVehiculo);
-            }
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogWarning(ex, "No se encontró un vehículo con ID: {IdVehiculo} para actualizar.", idVehiculo);
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error al intentar actualizar el vehículo con ID: {IdVehiculo}", idVehiculo);
-            throw;
-        }
-    }
-
-    public async Task EliminarVehiculoAsync(int idVehiculo)
-    {
-        _logger.LogInformation("Inicio del proceso para eliminar el vehículo con ID: {IdVehiculo}", idVehiculo);
-
-        string query = "DELETE FROM Vehiculos WHERE id_vehiculo = @IdVehiculo";
-
-        try
-        {
-            using (var connection = _conexion.CreateSqlConnection())
-            {
-                var filasAfectadas = await connection.ExecuteAsync(query, new { idVehiculo });
-
-                if (filasAfectadas == 0)
-                {
-                    _logger.LogWarning("No se encontró un vehículo con ID: {IdVehiculo} para eliminar.", idVehiculo);
-                    throw new KeyNotFoundException($"No se encontró un vehículo con ID: {idVehiculo} para eliminar.");
-                }
-
-                _logger.LogInformation("Vehículo con ID: {IdVehiculo} eliminado exitosamente.", idVehiculo);
-            }
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogWarning(ex, "No se encontró un vehículo con ID: {IdVehiculo} para eliminar.", idVehiculo);
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error al intentar eliminar el vehículo con ID: {IdVehiculo}", idVehiculo);
-            throw;
-        }
-    }
-
-    public async Task<IEnumerable<VehiculoDTO>> ObtenerTodosLosVehiculosAsync()
-    {
-        _logger.LogInformation("Inicio del proceso para obtener todos los vehículos.");
-
-        string query = @"
-                SELECT 
-                    id_vehiculo AS IdVehiculo,
-                    id_cliente AS IdCliente,
-                    marca AS Marca,
-                    modelo AS Modelo,
-                    anho AS Anho,
-                    placa AS Placa
-                FROM Vehiculos";
-
-        try
-        {
-            using (var connection = _conexion.CreateSqlConnection())
-            {
-                var vehiculos = await connection.QueryAsync<VehiculoDTO>(query);
-                _logger.LogInformation("Se han obtenido {Cantidad} vehículos.", vehiculos.Count());
-                return vehiculos;
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error al intentar obtener los vehículos.");
-            throw;
-        }
-    }
-
 }
