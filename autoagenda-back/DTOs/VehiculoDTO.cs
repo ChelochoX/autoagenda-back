@@ -2,10 +2,9 @@
 
 public class VehiculoDTO
 {
-    public int IdVehiculo { get; set; } 
-    public int IdCliente { get; set; } 
-    public string Marca { get; set; } 
-    public string Modelo { get; set; }
-    public int Anho { get; set; } 
-    public string Placa { get; set; } 
+    //public int IdVehiculo { get; set; }  
+    public int IdMarca { get; set; }
+    public int IdModelo { get; set; }
+    public int IdAnho { get; set; }
+    public string? Placa { get; set; }
 }

@@ -27,4 +27,10 @@ public class VehiculosService : IVehiculosService
     {
         return await _repository.ObtenerModelosPorMarcaAsync(idMarca);
     }
+
+    public async Task<int> InsertarVehiculoAsync(VehiculoDTO vehiculo)
+    {
+        return await _repository.InsertarVehiculoAsync(vehiculo);
+    }
+   
 }

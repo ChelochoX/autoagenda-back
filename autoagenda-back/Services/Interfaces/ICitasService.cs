@@ -9,4 +9,5 @@ public interface ICitasService
     Task<IEnumerable<CitaDTO>> ObtenerCitasPorVehiculoAsync(int idVehiculo);
     Task ActualizarCitaAsync(int idCita, CitaDTO cita);
     Task EliminarCitaAsync(int idCita);
+    Task<CitaDetalleDTO> ObtenerDetalleCitaAsync(int idCita);
 }

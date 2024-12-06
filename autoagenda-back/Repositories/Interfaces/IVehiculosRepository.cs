@@ -7,4 +7,5 @@ public interface IVehiculosRepository
     Task<IEnumerable<AnhoDTO>> ObtenerAnhosAsync();
     Task<IEnumerable<MarcaDTO>> ObtenerMarcasAsync();
     Task<IEnumerable<ModeloDTO>> ObtenerModelosPorMarcaAsync(int idMarca);
+    Task<int> InsertarVehiculoAsync(VehiculoDTO vehiculo);   
 }

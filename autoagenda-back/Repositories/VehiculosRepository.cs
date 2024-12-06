@@ -90,4 +90,32 @@ public class VehiculosRepository : IVehiculosRepository
             throw new RepositoryException("Error al obtener los modelos.", ex);
         }
     }
+
+    public async Task<int> InsertarVehiculoAsync(VehiculoDTO vehiculo)
+    {
+        _logger.LogInformation("Inicio del proceso para insertar un nuevo vehículo.");
+
+        string query = @"
+        INSERT INTO Vehiculos (id_marca, id_modelo, id_anho, placa)
+        VALUES (@IdMarca, @IdModelo, @IdAnho, @Placa);
+        SELECT CAST(SCOPE_IDENTITY() AS INT);"; 
+
+        try
+        {
+            using (var connection = _conexion.CreateSqlConnection())
+            {
+                var idVehiculo = await connection.QuerySingleAsync<int>(query, vehiculo);                
+                _logger.LogInformation("Vehículo insertado exitosamente con ID: {IdVehiculo}", idVehiculo);
+                return idVehiculo;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Ocurrió un error al insertar el vehículo.");
+            throw new RepositoryException("Error al insertar el vehículo.", ex);
+        }
+    }
+
+   
+
 }

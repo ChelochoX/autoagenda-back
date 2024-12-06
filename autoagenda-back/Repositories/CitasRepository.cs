@@ -22,9 +22,9 @@ public class CitasRepository : ICitasRepository
         _logger.LogInformation("Inicio del proceso para insertar una nueva cita.");
 
         string query = @"
-            INSERT INTO Citas (id_vehiculo, fecha, hora, id_tipo_servicio, estado, descripcion)
-            VALUES (@IdVehiculo, @Fecha, @Hora, @IdTipoServicio, @Estado, @Descripcion);
-            SELECT CAST(SCOPE_IDENTITY() AS INT)";
+                INSERT INTO Citas (id_vehiculo, fecha, hora, id_tipo_servicio, estado, descripcion, id_cliente)
+                VALUES (@IdVehiculo, @Fecha, @Hora, @IdTipoServicio, @Estado, @Descripcion, @IdCliente);
+                SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
         try
         {
@@ -169,6 +169,46 @@ public class CitasRepository : ICitasRepository
         {
             _logger.LogError(ex, "Ocurrió un error al eliminar la cita con ID: {IdCita}", idCita);
             throw new RepositoryException("Error al eliminar la cita.", ex);
+        }
+    }
+
+    public async Task<CitaDetalleDTO> ObtenerDetalleCitaAsync(int idCita)
+    {
+        _logger.LogInformation("Consultando los detalles de la cita con ID {IdCita}.", idCita);
+
+        string query = @"
+        SELECT 
+            c.id_cita,
+            c.fecha,
+            c.hora,
+            c.estado,
+            c.descripcion,
+            c.id_cliente,
+            ts.nombre AS tipo_servicio,
+            v.placa,
+            m.nombre AS marca,
+            mo.nombre AS modelo,
+            a.anho
+        FROM Citas c
+        INNER JOIN Vehiculos v ON c.id_vehiculo = v.id_vehiculo
+        INNER JOIN Marcas m ON v.id_marca = m.id_marca
+        INNER JOIN Modelos mo ON v.id_modelo = mo.id_modelo
+        INNER JOIN Anhos a ON v.id_anho = a.id_anho
+        INNER JOIN TipoServicio ts ON c.id_tipo_servicio = ts.id_tipo_servicio
+        WHERE c.id_cita = @IdCita;";
+
+        try
+        {
+            using (var connection = _conexion.CreateSqlConnection())
+            {
+                var detalleCita = await connection.QueryFirstOrDefaultAsync<CitaDetalleDTO>(query, new { IdCita = idCita });
+                return detalleCita;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener los detalles de la cita con ID {IdCita}.", idCita);
+            throw new RepositoryException("Error al obtener los detalles de la cita.", ex);
         }
     }
 

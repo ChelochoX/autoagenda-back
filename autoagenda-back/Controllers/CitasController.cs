@@ -17,10 +17,7 @@ namespace autoagenda_back.Controllers
             _service = service;
             _logger = logger;
         }
-
-        /// <summary>
-        /// Inserta una nueva cita.
-        /// </summary>
+              
         [HttpPost("crear")]
         [SwaggerOperation(
             Summary = "Crea una nueva cita",
@@ -40,64 +37,8 @@ namespace autoagenda_back.Controllers
                 return StatusCode(500, new { mensaje = "Ocurrió un error al intentar insertar la cita." });
             }
         }
+                
 
-        /// <summary>
-        /// Obtiene una cita por su ID.
-        /// </summary>
-        [HttpGet("{idCita}")]
-        [SwaggerOperation(
-            Summary = "Obtiene una cita por ID",
-            Description = "Permite buscar una cita específica utilizando su identificador único.")]
-        public async Task<IActionResult> ObtenerCitaPorIdAsync([FromRoute] int idCita)
-        {
-            _logger.LogInformation("Solicitud para obtener una cita con ID: {IdCita}", idCita);
-
-            try
-            {
-                var cita = await _service.ObtenerCitaPorIdAsync(idCita);
-
-                if (cita == null)
-                    return NotFound(new { mensaje = "No se encontró ninguna cita con el ID especificado." });
-
-                return Ok(cita);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al intentar obtener la cita con ID: {IdCita}", idCita);
-                return StatusCode(500, new { mensaje = "Ocurrió un error al intentar obtener la cita." });
-            }
-        }
-
-        /// <summary>
-        /// Obtiene todas las citas de un vehículo.
-        /// </summary>
-        [HttpGet("vehiculo/{idVehiculo}")]
-        [SwaggerOperation(
-            Summary = "Obtiene todas las citas de un vehículo",
-            Description = "Permite buscar todas las citas asociadas a un vehículo específico.")]
-        public async Task<IActionResult> ObtenerCitasPorVehiculoAsync([FromRoute] int idVehiculo)
-        {
-            _logger.LogInformation("Solicitud para obtener citas del vehículo con ID: {IdVehiculo}", idVehiculo);
-
-            try
-            {
-                var citas = await _service.ObtenerCitasPorVehiculoAsync(idVehiculo);
-
-                if (citas == null || !citas.Any())
-                    return NotFound(new { mensaje = "No se encontraron citas para el vehículo especificado." });
-
-                return Ok(citas);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al intentar obtener las citas del vehículo con ID: {IdVehiculo}", idVehiculo);
-                return StatusCode(500, new { mensaje = "Ocurrió un error al intentar obtener las citas." });
-            }
-        }
-
-        /// <summary>
-        /// Actualiza los datos de una cita existente.
-        /// </summary>
         [HttpPut("{idCita}")]
         [SwaggerOperation(
             Summary = "Actualiza una cita",
@@ -117,10 +58,8 @@ namespace autoagenda_back.Controllers
                 return StatusCode(500, new { mensaje = "Ocurrió un error al intentar actualizar la cita." });
             }
         }
-
-        /// <summary>
-        /// Elimina una cita por su ID.
-        /// </summary>
+        
+        
         [HttpDelete("{idCita}")]
         [SwaggerOperation(
             Summary = "Elimina una cita",
@@ -139,6 +78,22 @@ namespace autoagenda_back.Controllers
                 _logger.LogError(ex, "Error al intentar eliminar la cita con ID: {IdCita}", idCita);
                 return StatusCode(500, new { mensaje = "Ocurrió un error al intentar eliminar la cita." });
             }
+        }
+
+
+        [HttpGet("{idCita}")]
+        [SwaggerOperation(
+         Summary = "Obtiene los detalles de una cita",
+         Description = "Devuelve los detalles completos de una cita, incluyendo información del vehículo y tipo de servicio.")]
+        public async Task<IActionResult> ObtenerDetalleCitaAsync(int idCita)
+        {
+            var detalleCita = await _service.ObtenerDetalleCitaAsync(idCita);
+            if (detalleCita == null)
+            {
+                return NotFound(new { mensaje = "No se encontró la cita con el ID especificado." });
+            }
+
+            return Ok(detalleCita);
         }
     }
 }

@@ -46,4 +46,9 @@ public class CitasService : ICitasService
         await _repository.EliminarCita(idCita);      
     }
 
+    public async Task<CitaDetalleDTO> ObtenerDetalleCitaAsync(int idCita)
+    {
+        return await _repository.ObtenerDetalleCitaAsync(idCita);
+    }
+
 }

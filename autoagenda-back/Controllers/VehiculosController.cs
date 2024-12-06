@@ -1,5 +1,7 @@
-﻿using autoagenda_back.Services.Interfaces;
+﻿using autoagenda_back.DTOs;
+using autoagenda_back.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace autoagenda_back.Controllers
 {
@@ -36,6 +38,18 @@ namespace autoagenda_back.Controllers
             var modelos = await _service.ObtenerModelosPorMarcaAsync(idMarca);
             return Ok(modelos);           
         }
+
+        [HttpPost("crear")]
+        [SwaggerOperation(
+        Summary = "Crea una nueva cita asociada a un vehículo y un tipo de servicio",
+        Description = "Permite registrar una nueva cita junto con su vehículo.")]
+        public async Task<IActionResult> CrearCitaConVehiculoAsync([FromBody] VehiculoDTO vehiculo)
+        {       
+            // Llamar al servicio para crear la cita y el vehículo
+            var idVehiculo = await _service.InsertarVehiculoAsync(vehiculo);
+
+            return Ok(new { mensaje = "Cita y vehículo creados exitosamente.", idVehiculo });          
+        }       
 
     }
 }

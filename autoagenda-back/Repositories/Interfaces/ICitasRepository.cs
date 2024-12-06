@@ -13,5 +13,7 @@ namespace autoagenda_back.Repositories.Interfaces
         Task ActualizarCita(int idCita, CitaDTO cita);
         
         Task EliminarCita(int idCita);
+
+        Task<CitaDetalleDTO> ObtenerDetalleCitaAsync(int idCita);
     }
 }
