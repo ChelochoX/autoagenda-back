@@ -36,9 +36,9 @@ public class CitasService : ICitasService
         return citas;       
     }
 
-    public async Task ActualizarCitaAsync(int idCita, CitaDTO cita)
+    public async Task ActualizarCitaAsync(int idCita, ActualizarCitaDTO citaActualizada)
     {        
-        await _repository.ActualizarCita(idCita, cita);       
+        await _repository.ActualizarCitaAsync(idCita, citaActualizada);       
     }
 
     public async Task EliminarCitaAsync(int idCita)
@@ -51,4 +51,8 @@ public class CitasService : ICitasService
         return await _repository.ObtenerDetalleCitaAsync(idCita);
     }
 
+    public async Task<IEnumerable<CitaDetalleDTO>> ObtenerCitasPorFechaYClienteAsync(DateTime fecha, int idCliente)
+    {
+        return await _repository.ObtenerCitasPorFechaYClienteAsync(fecha,idCliente);
+    }
 }

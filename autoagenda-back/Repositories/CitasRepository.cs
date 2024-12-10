@@ -109,32 +109,34 @@ public class CitasRepository : ICitasRepository
         }
     }
 
-    public async Task ActualizarCita(int idCita, CitaDTO cita)
+    public async Task ActualizarCitaAsync(int idCita, ActualizarCitaDTO citaActualizada)
     {
-        _logger.LogInformation("Actualizando cita con ID: {IdCita}", idCita);
+        _logger.LogInformation("Actualizando hora y descripción de la cita con ID: {IdCita}", idCita);
 
         string query = @"
-            UPDATE Citas SET
-                id_vehiculo = @IdVehiculo,
-                fecha = @Fecha,
-                hora = @Hora,
-                id_tipo_servicio = @IdTipoServicio,
-                estado = @Estado,
-                descripcion = @Descripcion
-            WHERE id_cita = @IdCita";
+        UPDATE Citas
+        SET
+            hora = @Hora,
+            descripcion = @Descripcion
+        WHERE id_cita = @IdCita";
 
         try
         {
             using (var connection = _conexion.CreateSqlConnection())
             {
-                var filasAfectadas = await connection.ExecuteAsync(query, new { cita.IdVehiculo, cita.Fecha, cita.Hora, cita.IdTipoServicio, cita.Estado, cita.Descripcion, idCita });
+                var filasAfectadas = await connection.ExecuteAsync(query, new
+                {
+                    citaActualizada.Hora,
+                    citaActualizada.Descripcion,
+                    idCita
+                });
 
                 if (filasAfectadas == 0)
                 {
                     throw new NoDataFoundException($"No se encontró ninguna cita con el ID: {idCita} para actualizar.");
                 }
 
-                _logger.LogInformation("Cita con ID: {IdCita} actualizada exitosamente.", idCita);
+                _logger.LogInformation("Hora y descripción de la cita con ID: {IdCita} actualizadas exitosamente.", idCita);
             }
         }
         catch (Exception ex)
@@ -143,6 +145,7 @@ public class CitasRepository : ICitasRepository
             throw new RepositoryException("Error al actualizar la cita.", ex);
         }
     }
+
 
     public async Task EliminarCita(int idCita)
     {
@@ -177,25 +180,26 @@ public class CitasRepository : ICitasRepository
         _logger.LogInformation("Consultando los detalles de la cita con ID {IdCita}.", idCita);
 
         string query = @"
-        SELECT 
-            c.id_cita,
-            c.fecha,
-            c.hora,
-            c.estado,
-            c.descripcion,
-            c.id_cliente,
-            ts.nombre AS tipo_servicio,
-            v.placa,
-            m.nombre AS marca,
-            mo.nombre AS modelo,
-            a.anho
-        FROM Citas c
-        INNER JOIN Vehiculos v ON c.id_vehiculo = v.id_vehiculo
-        INNER JOIN Marcas m ON v.id_marca = m.id_marca
-        INNER JOIN Modelos mo ON v.id_modelo = mo.id_modelo
-        INNER JOIN Anhos a ON v.id_anho = a.id_anho
-        INNER JOIN TipoServicio ts ON c.id_tipo_servicio = ts.id_tipo_servicio
-        WHERE c.id_cita = @IdCita;";
+                SELECT 
+                    c.id_cita AS IdCita,                  -- Identificador único de la cita
+                    c.fecha AS Fecha,                    -- Fecha programada de la cita
+                    c.hora AS Hora,                      -- Hora programada de la cita
+                    c.estado AS Estado,                  -- Estado de la cita (pendiente, aprobado, rechazado)
+                    c.descripcion AS Descripcion,        -- Descripción adicional de la cita
+                    c.id_cliente AS IdCliente,           -- Identificador del cliente asociado a la cita
+                    ts.nombre AS TipoServicio,           -- Tipo de servicio solicitado
+                    v.placa AS Placa,                    -- Placa del vehículo
+                    m.nombre AS Marca,                   -- Marca del vehículo
+                    mo.nombre AS Modelo,                 -- Modelo del vehículo
+                    a.anho AS Anho                       -- Año del vehículo
+                FROM Citas c
+                INNER JOIN Vehiculos v ON c.id_vehiculo = v.id_vehiculo
+                INNER JOIN Marcas m ON v.id_marca = m.id_marca
+                INNER JOIN Modelos mo ON v.id_modelo = mo.id_modelo
+                INNER JOIN Anhos a ON v.id_anho = a.id_anho
+                INNER JOIN TipoServicio ts ON c.id_tipo_servicio = ts.id_tipo_servicio
+                WHERE c.id_cita = @IdCita
+                ORDER BY c.hora";
 
         try
         {
@@ -209,6 +213,47 @@ public class CitasRepository : ICitasRepository
         {
             _logger.LogError(ex, "Error al obtener los detalles de la cita con ID {IdCita}.", idCita);
             throw new RepositoryException("Error al obtener los detalles de la cita.", ex);
+        }
+    }
+
+    public async Task<IEnumerable<CitaDetalleDTO>> ObtenerCitasPorFechaYClienteAsync(DateTime fecha, int idCliente)
+    {
+        _logger.LogInformation("Consultando las citas para el cliente {IdCliente} en la fecha {Fecha}.", idCliente, fecha);
+
+        string query = @"
+                SELECT 
+                    c.id_cita AS IdCita,                  -- Identificador único de la cita
+                    c.fecha AS Fecha,                    -- Fecha programada de la cita
+                    c.hora AS Hora,                      -- Hora programada de la cita
+                    c.estado AS Estado,                  -- Estado de la cita (pendiente, aprobado, rechazado)
+                    c.descripcion AS Descripcion,        -- Descripción adicional de la cita
+                    c.id_cliente AS IdCliente,           -- Identificador del cliente asociado a la cita
+                    ts.nombre AS TipoServicio,           -- Tipo de servicio solicitado
+                    v.placa AS Placa,                    -- Placa del vehículo
+                    m.nombre AS Marca,                   -- Marca del vehículo
+                    mo.nombre AS Modelo,                 -- Modelo del vehículo
+                    a.anho AS Anho                       -- Año del vehículo
+                FROM Citas c
+                INNER JOIN Vehiculos v ON c.id_vehiculo = v.id_vehiculo
+                INNER JOIN Marcas m ON v.id_marca = m.id_marca
+                INNER JOIN Modelos mo ON v.id_modelo = mo.id_modelo
+                INNER JOIN Anhos a ON v.id_anho = a.id_anho
+                INNER JOIN TipoServicio ts ON c.id_tipo_servicio = ts.id_tipo_servicio
+                WHERE c.fecha = @Fecha AND c.id_cliente = @IdCliente
+                ORDER BY c.hora";
+
+        try
+        {
+            using (var connection = _conexion.CreateSqlConnection())
+            {
+                var citas = await connection.QueryAsync<CitaDetalleDTO>(query, new { Fecha = fecha.Date, IdCliente = idCliente });
+                return citas;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener citas para el cliente {IdCliente} en la fecha {Fecha}.", idCliente, fecha);
+            throw new RepositoryException("Error al obtener las citas.", ex);
         }
     }
 
