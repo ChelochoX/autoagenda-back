@@ -81,7 +81,7 @@ public class CitasController : ControllerBase
         var detalleCita = await _service.ObtenerDetalleCitaAsync(idCita);
         if (detalleCita == null)
         {
-            return NotFound(new { mensaje = "No se encontró la cita con el ID especificado." });
+            return NoContent();
         }
 
         return Ok(detalleCita);
@@ -91,13 +91,13 @@ public class CitasController : ControllerBase
     [SwaggerOperation(
     Summary = "Obtiene citas filtradas por fecha e ID del cliente",
     Description = "Devuelve las citas de un cliente para una fecha específica, incluyendo información del vehículo y tipo de servicio.")]
-    public async Task<IActionResult> ObtenerCitasPorFechaYClienteAsync([FromQuery] DateTime fecha, [FromQuery] int idCliente)
+    public async Task<IActionResult> ObtenerCitasPorFechaYClienteAsync([FromQuery] DateTime fecha, [FromQuery] int idUsuario)
     {
-        var citas = await _service.ObtenerCitasPorFechaYClienteAsync(fecha, idCliente);
+        var citas = await _service.ObtenerCitasPorFechaYClienteAsync(fecha, idUsuario);
 
         if (!citas.Any())
         {
-            return NotFound(new { mensaje = "No se encontraron citas para la fecha y cliente especificados." });
+            return NoContent();
         }
 
         return Ok(citas);

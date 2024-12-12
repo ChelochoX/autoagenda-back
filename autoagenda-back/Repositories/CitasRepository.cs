@@ -22,8 +22,8 @@ public class CitasRepository : ICitasRepository
         _logger.LogInformation("Inicio del proceso para insertar una nueva cita.");
 
         string query = @"
-                INSERT INTO Citas (id_vehiculo, fecha, hora, id_tipo_servicio, estado, descripcion, id_cliente)
-                VALUES (@IdVehiculo, @Fecha, @Hora, @IdTipoServicio, @Estado, @Descripcion, @IdCliente);
+                INSERT INTO Citas (id_vehiculo, fecha, hora, id_tipo_servicio, estado, descripcion, id_usuario)
+                VALUES (@IdVehiculo, @Fecha, @Hora, @IdTipoServicio, @Estado, @Descripcion, @IdUsuario);
                 SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
         try
@@ -186,7 +186,7 @@ public class CitasRepository : ICitasRepository
                     c.hora AS Hora,                      -- Hora programada de la cita
                     c.estado AS Estado,                  -- Estado de la cita (pendiente, aprobado, rechazado)
                     c.descripcion AS Descripcion,        -- Descripción adicional de la cita
-                    c.id_cliente AS IdCliente,           -- Identificador del cliente asociado a la cita
+                    c.id_usuario AS IdUsuario,           -- Identificador del cliente asociado a la cita
                     ts.nombre AS TipoServicio,           -- Tipo de servicio solicitado
                     v.placa AS Placa,                    -- Placa del vehículo
                     m.nombre AS Marca,                   -- Marca del vehículo
@@ -216,9 +216,9 @@ public class CitasRepository : ICitasRepository
         }
     }
 
-    public async Task<IEnumerable<CitaDetalleDTO>> ObtenerCitasPorFechaYClienteAsync(DateTime fecha, int idCliente)
+    public async Task<IEnumerable<CitaDetalleDTO>> ObtenerCitasPorFechaYClienteAsync(DateTime fecha, int idUsuario)
     {
-        _logger.LogInformation("Consultando las citas para el cliente {IdCliente} en la fecha {Fecha}.", idCliente, fecha);
+        _logger.LogInformation("Consultando las citas para el cliente {IdUsuario} en la fecha {Fecha}.", idUsuario, fecha);
 
         string query = @"
                 SELECT 
@@ -227,7 +227,7 @@ public class CitasRepository : ICitasRepository
                     c.hora AS Hora,                      -- Hora programada de la cita
                     c.estado AS Estado,                  -- Estado de la cita (pendiente, aprobado, rechazado)
                     c.descripcion AS Descripcion,        -- Descripción adicional de la cita
-                    c.id_cliente AS IdCliente,           -- Identificador del cliente asociado a la cita
+                    c.id_usuario AS IdUsuario,           -- Identificador del cliente asociado a la cita
                     ts.nombre AS TipoServicio,           -- Tipo de servicio solicitado
                     v.placa AS Placa,                    -- Placa del vehículo
                     m.nombre AS Marca,                   -- Marca del vehículo
@@ -239,20 +239,20 @@ public class CitasRepository : ICitasRepository
                 INNER JOIN Modelos mo ON v.id_modelo = mo.id_modelo
                 INNER JOIN Anhos a ON v.id_anho = a.id_anho
                 INNER JOIN TipoServicio ts ON c.id_tipo_servicio = ts.id_tipo_servicio
-                WHERE c.fecha = @Fecha AND c.id_cliente = @IdCliente
+                WHERE c.fecha = @Fecha AND c.id_usuario = @IdUsuario
                 ORDER BY c.hora";
 
         try
         {
             using (var connection = _conexion.CreateSqlConnection())
             {
-                var citas = await connection.QueryAsync<CitaDetalleDTO>(query, new { Fecha = fecha.Date, IdCliente = idCliente });
+                var citas = await connection.QueryAsync<CitaDetalleDTO>(query, new { Fecha = fecha.Date, IdUsuario= idUsuario });
                 return citas;
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al obtener citas para el cliente {IdCliente} en la fecha {Fecha}.", idCliente, fecha);
+            _logger.LogError(ex, "Error al obtener citas para el cliente {IdUsuario} en la fecha {Fecha}.", idUsuario, fecha);
             throw new RepositoryException("Error al obtener las citas.", ex);
         }
     }

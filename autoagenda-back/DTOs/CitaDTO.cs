@@ -9,6 +9,6 @@ public class CitaDTO
     public string Estado { get; set; }
     public int IdTipoServicio { get; set; }
     public string Descripcion { get; set; }
-    public int IdCliente { get; set; }
+    public int IdUsuario { get; set; }
 
 }

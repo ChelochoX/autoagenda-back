@@ -7,7 +7,7 @@ public class CitaDetalleDTO
     public string Hora { get; set; }
     public string Estado { get; set; }
     public string Descripcion { get; set; }
-    public int IdCliente { get; set; }
+    public int IdUsuario { get; set; }
     public string TipoServicio { get; set; }
     public string Placa { get; set; }
     public string Marca { get; set; }

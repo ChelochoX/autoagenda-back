@@ -51,8 +51,8 @@ public class CitasService : ICitasService
         return await _repository.ObtenerDetalleCitaAsync(idCita);
     }
 
-    public async Task<IEnumerable<CitaDetalleDTO>> ObtenerCitasPorFechaYClienteAsync(DateTime fecha, int idCliente)
+    public async Task<IEnumerable<CitaDetalleDTO>> ObtenerCitasPorFechaYClienteAsync(DateTime fecha, int idusuario)
     {
-        return await _repository.ObtenerCitasPorFechaYClienteAsync(fecha,idCliente);
+        return await _repository.ObtenerCitasPorFechaYClienteAsync(fecha,idusuario);
     }
 }
