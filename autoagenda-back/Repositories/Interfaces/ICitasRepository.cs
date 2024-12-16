@@ -18,4 +18,6 @@ public interface ICitasRepository
     Task<CitaDetalleDTO> ObtenerDetalleCitaAsync(int idCita);
 
     Task<IEnumerable<CitaDetalleDTO>> ObtenerCitasPorFechaYClienteAsync(DateTime fecha, int idCliente);
+
+    Task ActualizarEstadoCitaAsync(int idCita, string estadoCita);
 }

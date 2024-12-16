@@ -55,4 +55,9 @@ public class CitasService : ICitasService
     {
         return await _repository.ObtenerCitasPorFechaYClienteAsync(fecha,idusuario);
     }
+
+    public async Task ActualizarEstadoCitaAsync(int idCita, string estadoCita)
+    {
+        await _repository.ActualizarEstadoCitaAsync(idCita,estadoCita);
+    }
 }

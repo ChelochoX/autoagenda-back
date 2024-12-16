@@ -1,4 +1,6 @@
 ﻿using autoagenda_back.DTOs;
+using autoagenda_back.Exceptions;
+using autoagenda_back.Services;
 using autoagenda_back.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -48,8 +50,6 @@ public class CitasController : ControllerBase
         await _service.ActualizarCitaAsync(idCita, citaActualizada);
         return Ok(new { mensaje = "Cita actualizada exitosamente." });
     }
-
-
 
     [HttpDelete("{idCita}")]
     [SwaggerOperation(
@@ -101,6 +101,23 @@ public class CitasController : ControllerBase
         }
 
         return Ok(citas);
+    }
+
+
+    [HttpPut("{idCita}/estado")]
+    public async Task<IActionResult> ActualizarEstadoCita(int idCita, [FromBody] string estadoDTO)
+    {
+        _logger.LogInformation("Iniciando actualización de estado de la cita con ID: {IdCita}", idCita);
+
+        if (string.IsNullOrWhiteSpace(estadoDTO) ||
+            (estadoDTO != "aprobado" && estadoDTO != "rechazado"))
+        {
+            return BadRequest("El estado debe ser 'aprobado' o 'rechazado'.");
+        }
+       
+        await _service.ActualizarEstadoCitaAsync(idCita, estadoDTO);
+        return Ok(new { Message = "Estado de la cita actualizado correctamente." });
+       
     }
 
 }

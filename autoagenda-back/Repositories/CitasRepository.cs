@@ -146,7 +146,6 @@ public class CitasRepository : ICitasRepository
         }
     }
 
-
     public async Task EliminarCita(int idCita)
     {
         _logger.LogInformation("Eliminando cita con ID: {IdCita}", idCita);
@@ -256,5 +255,41 @@ public class CitasRepository : ICitasRepository
             throw new RepositoryException("Error al obtener las citas.", ex);
         }
     }
+
+    public async Task ActualizarEstadoCitaAsync(int idCita, string estadoCita)
+    {
+        _logger.LogInformation("Actualizando el estado de la cita con ID: {IdCita} a {Estado}", idCita, estadoCita);
+
+        string query = @"
+            UPDATE Citas
+            SET
+                estado = @estadoCita
+            WHERE id_cita = @idCita";
+
+        try
+        {
+            using (var connection = _conexion.CreateSqlConnection())
+            {
+                var filasAfectadas = await connection.ExecuteAsync(query, new
+                {
+                    estadoCita,
+                    idCita
+                });
+
+                if (filasAfectadas == 0)
+                {
+                    throw new NoDataFoundException($"No se encontró ninguna cita con el ID: {idCita} para actualizar.");
+                }
+
+                _logger.LogInformation("El estado de la cita con ID: {IdCita} fue actualizado a {Estado}.", idCita, estadoCita);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al actualizar el estado de la cita con ID: {IdCita}", idCita);
+            throw new RepositoryException("Error al actualizar el estado de la cita.", ex);
+        }
+    }
+
 
 }
