@@ -1,6 +1,4 @@
 ﻿using autoagenda_back.DTOs;
-using autoagenda_back.Exceptions;
-using autoagenda_back.Services;
 using autoagenda_back.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -19,7 +17,7 @@ public class CitasController : ControllerBase
         _service = service;
         _logger = logger;
     }
-          
+
     [HttpPost("crear")]
     [SwaggerOperation(
         Summary = "Crea una nueva cita",
@@ -30,7 +28,7 @@ public class CitasController : ControllerBase
 
         try
         {
-            var idCita = await _service.InsertarCitaAsync(cita);
+            int idCita = await _service.InsertarCitaAsync(cita);
             return Ok(new { mensaje = "Cita creada exitosamente.", idCita });
         }
         catch (Exception ex)
@@ -78,13 +76,8 @@ public class CitasController : ControllerBase
      Description = "Devuelve los detalles completos de una cita, incluyendo información del vehículo y tipo de servicio.")]
     public async Task<IActionResult> ObtenerDetalleCitaAsync(int idCita)
     {
-        var detalleCita = await _service.ObtenerDetalleCitaAsync(idCita);
-        if (detalleCita == null)
-        {
-            return NoContent();
-        }
-
-        return Ok(detalleCita);
+        CitaDetalleDTO detalleCita = await _service.ObtenerDetalleCitaAsync(idCita);
+        return detalleCita == null ? NoContent() : Ok(detalleCita);
     }
 
     [HttpGet("buscarcita")]
@@ -93,14 +86,9 @@ public class CitasController : ControllerBase
     Description = "Devuelve las citas de un cliente para una fecha específica, incluyendo información del vehículo y tipo de servicio.")]
     public async Task<IActionResult> ObtenerCitasPorFechaYClienteAsync([FromQuery] DateTime fecha, [FromQuery] int idUsuario)
     {
-        var citas = await _service.ObtenerCitasPorFechaYClienteAsync(fecha, idUsuario);
+        IEnumerable<CitaDetalleDTO> citas = await _service.ObtenerCitasPorFechaYClienteAsync(fecha, idUsuario);
 
-        if (!citas.Any())
-        {
-            return NoContent();
-        }
-
-        return Ok(citas);
+        return !citas.Any() ? NoContent() : Ok(citas);
     }
 
 
@@ -114,10 +102,10 @@ public class CitasController : ControllerBase
         {
             return BadRequest("El estado debe ser 'aprobado' o 'rechazado'.");
         }
-       
+
         await _service.ActualizarEstadoCitaAsync(idCita, estadoDTO);
         return Ok(new { Message = "Estado de la cita actualizado correctamente." });
-       
+
     }
 
 }

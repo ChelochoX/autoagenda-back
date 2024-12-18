@@ -1,5 +1,4 @@
-﻿using autoagenda_back.Exceptions;
-using autoagenda_back.Services.Interfaces;
+﻿using autoagenda_back.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -23,16 +22,10 @@ public class UsuariosController : ControllerBase
     Summary = "Obtiene los detalles de un usuario",
     Description = "Devuelve los detalles completos de un usuario")]
     public async Task<IActionResult> ObtenerDetalleUsuarioAsync(int idUsuario)
-    {       
-        var detalleUsuario = await _service.ObtenerUsuarioPorIdAsync(idUsuario);
+    {
+        DTOs.UsuarioDTO detalleUsuario = await _service.ObtenerUsuarioPorIdAsync(idUsuario);
 
-        if (detalleUsuario == null)
-        {
-            return NoContent();
-        }
-
-        return Ok(detalleUsuario);      
-    
+        return detalleUsuario == null ? NoContent() : Ok(detalleUsuario);
     }
 
 }

@@ -9,6 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Models\**" />
+    <Content Remove="Models\**" />
+    <EmbeddedResource Remove="Models\**" />
+    <None Remove="Models\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Dapper" Version="2.1.35" />
     <PackageReference Include="FluentValidation" Version="11.11.0" />
     <PackageReference Include="itext.bouncy-castle-adapter" Version="9.0.0" />
@@ -21,10 +28,6 @@
     <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="7.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="7.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="7.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Models\" />
   </ItemGroup>
 
 	<PropertyGroup>
