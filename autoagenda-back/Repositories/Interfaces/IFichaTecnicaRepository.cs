@@ -5,6 +5,6 @@ namespace autoagenda_back.Repositories.Interfaces;
 
 public interface IFichaTecnicaRepository
 {
-    Task<FichaTecnicaDTO> GenerarFichaTecnicaAsync(FichaTecnicaRequest request);
+    Task<int> CrearFichaTecnicaAsync(FichaTecnicaRequest request);
     Task<FichaTecnicaDTO> ObtenerFichaTecnicaCompletaAsync(int idFicha);
 }

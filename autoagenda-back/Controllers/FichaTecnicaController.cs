@@ -25,23 +25,11 @@ public class FichaTecnicaController : ControllerBase
             return BadRequest(new { Message = "La solicitud está vacía." });
         }
 
-        try
-        {
-            _logger.LogInformation("Recibiendo solicitud para crear ficha técnica.");
+        // Generar la ficha técnica y obtener el DTO completo
+        DTOs.FichaTecnicaDTO fichaTecnica = await _service.GenerarFichaTecnicaAsync(request);
 
-            DTOs.FichaTecnicaDTO fichaTecnica = await _service.GenerarFichaTecnicaAsync(request);
-
-            return CreatedAtAction(
-                nameof(ObtenerFichaTecnica),
-                new { idFicha = fichaTecnica.IdFicha },
-                fichaTecnica
-            );
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error al crear la ficha técnica.");
-            return StatusCode(500, new { Message = "Error interno del servidor." });
-        }
+        // Retornar directamente el DTO completo con HTTP 201 (Created)
+        return Created("", fichaTecnica);
     }
 
     [HttpGet("{idFicha}")]

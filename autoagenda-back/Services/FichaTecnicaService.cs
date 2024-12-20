@@ -18,7 +18,13 @@ public class FichaTecnicaService : IFichaTecnicaService
 
     public async Task<FichaTecnicaDTO> GenerarFichaTecnicaAsync(FichaTecnicaRequest request)
     {
-        return await _repository.GenerarFichaTecnicaAsync(request);
+        _logger.LogInformation("Procesando generación de ficha técnica para la cita con ID: {IdCita}", request.IdCita);
+
+        // Insertar la ficha técnica y obtener el ID generado o existente
+        int idFicha = await _repository.CrearFichaTecnicaAsync(request);
+
+        // Obtener los datos completos de la ficha técnica
+        return await _repository.ObtenerFichaTecnicaCompletaAsync(idFicha);
     }
 
     public async Task<FichaTecnicaDTO> ObtenerFichaTecnicaCompletaAsync(int idFicha)

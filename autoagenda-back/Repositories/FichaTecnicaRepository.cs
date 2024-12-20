@@ -18,60 +18,87 @@ public class FichaTecnicaRepository : IFichaTecnicaRepository
         _conexion = conexion;
     }
 
-    public async Task<FichaTecnicaDTO> GenerarFichaTecnicaAsync(FichaTecnicaRequest request)
+    public async Task<int> CrearFichaTecnicaAsync(FichaTecnicaRequest request)
     {
-        _logger.LogInformation("Generando ficha técnica para la cita con ID {IdCita}.", request.IdCita);
+        _logger.LogInformation("Generando ficha técnica para la cita con ID: {IdCita}", request.IdCita);
+
+        string checkQuery = @"
+    SELECT 
+        IdFicha 
+    FROM 
+        FichaTecnicaVehiculo WITH (UPDLOCK, HOLDLOCK)
+    WHERE 
+        IdCita = @IdCita";
 
         string insertQuery = @"
-        INSERT INTO [FichaTecnicaVehiculo] (
-            IdCita, 
-            KilometrajeIngreso, 
-            KilometrajeProximo, 
-            DetallesServicio, 
-            MecanicoResponsable, 
-            Estado, 
-            FechaCreacion
-        )
-        VALUES (
-            @IdCita, 
-            @KilometrajeIngreso, 
-            @KilometrajeProximo, 
-            @DetallesServicio, 
-            @MecanicoResponsable, 
-            'En Proceso', 
-            GETDATE()
-        );
-        SELECT SCOPE_IDENTITY();";
+    INSERT INTO [FichaTecnicaVehiculo] (
+        IdCita, 
+        KilometrajeIngreso, 
+        KilometrajeProximo, 
+        DetallesServicio, 
+        MecanicoResponsable, 
+        Estado, 
+        FechaCreacion
+    )
+    VALUES (
+        @IdCita, 
+        @KilometrajeIngreso, 
+        @KilometrajeProximo, 
+        @DetallesServicio, 
+        @MecanicoResponsable, 
+        'En Proceso', 
+        GETDATE()
+    );
+    SELECT SCOPE_IDENTITY();";
 
         try
         {
             using System.Data.IDbConnection connection = _conexion.CreateSqlConnection();
-            // Insertar la ficha técnica y obtener el ID generado
-            int idFicha = await connection.ExecuteScalarAsync<int>(insertQuery, new
+            connection.Open();
+            using System.Data.IDbTransaction transaction = connection.BeginTransaction(System.Data.IsolationLevel.Serializable);
+            // Verificar si ya existe la ficha técnica
+            int? fichaExistenteId = await connection.QueryFirstOrDefaultAsync<int?>(
+                checkQuery,
+                new { request.IdCita },
+                transaction
+            );
+
+            if (fichaExistenteId.HasValue)
             {
-                request.IdCita,
-                request.KilometrajeIngreso,
-                request.KilometrajeProximo,
-                request.DetallesServicio,
-                request.MecanicoResponsable
-            });
+                _logger.LogWarning("Ya existe una ficha técnica para la cita con ID: {IdCita}.", request.IdCita);
+                transaction.Rollback();
+                return fichaExistenteId.Value;
+            }
 
-            _logger.LogInformation("Ficha técnica generada con ID {IdFicha}.", idFicha);
+            // Insertar una nueva ficha técnica
+            int idFicha = await connection.ExecuteScalarAsync<int>(
+                insertQuery,
+                new
+                {
+                    request.IdCita,
+                    request.KilometrajeIngreso,
+                    request.KilometrajeProximo,
+                    request.DetallesServicio,
+                    request.MecanicoResponsable
+                },
+                transaction
+            );
 
-            // Retornar los datos completos
-            FichaTecnicaDTO fichaTecnica = await ObtenerFichaTecnicaCompletaAsync(idFicha);
-            return fichaTecnica;
+            transaction.Commit();
+            _logger.LogInformation("Ficha técnica creada con ID: {IdFicha}", idFicha);
+            return idFicha;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al generar la ficha técnica para la cita con ID {IdCita}.", request.IdCita);
+            _logger.LogError(ex, "Error al generar la ficha técnica para la cita con ID: {IdCita}", request.IdCita);
             throw new RepositoryException("Error al generar la ficha técnica.", ex);
         }
     }
 
+
     public async Task<FichaTecnicaDTO> ObtenerFichaTecnicaCompletaAsync(int idFicha)
     {
-        _logger.LogInformation("Obteniendo detalles completos de la ficha técnica con ID {IdFicha}.", idFicha);
+        _logger.LogInformation("Obteniendo detalles completos de la ficha técnica con ID: {IdFicha}.", idFicha);
 
         string query = @"
         SELECT 
@@ -102,17 +129,17 @@ public class FichaTecnicaRepository : IFichaTecnicaRepository
 
             if (fichaTecnica == null)
             {
-                _logger.LogWarning("No se encontró la ficha técnica con ID {IdFicha}.", idFicha);
-                throw new KeyNotFoundException($"No se encontró la ficha técnica con ID {idFicha}.");
+                _logger.LogWarning("No se encontró la ficha técnica con ID: {IdFicha}.", idFicha);
+                throw new KeyNotFoundException($"No se encontró la ficha técnica con ID: {idFicha}.");
             }
 
             return fichaTecnica;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al obtener los detalles de la ficha técnica con ID {IdFicha}.", idFicha);
+            _logger.LogError(ex, "Error al obtener los detalles de la ficha técnica con ID: {IdFicha}", idFicha);
             throw new RepositoryException("Error al obtener los detalles de la ficha técnica.", ex);
         }
     }
-
 }
+
