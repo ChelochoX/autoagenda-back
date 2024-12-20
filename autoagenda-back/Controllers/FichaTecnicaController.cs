@@ -35,19 +35,23 @@ public class FichaTecnicaController : ControllerBase
     [HttpGet("{idFicha}")]
     public async Task<IActionResult> ObtenerFichaTecnica(int idFicha)
     {
-        try
-        {
-            _logger.LogInformation("Consultando ficha técnica con ID {IdFicha}.", idFicha);
 
-            DTOs.FichaTecnicaDTO fichaTecnica = await _service.ObtenerFichaTecnicaCompletaAsync(idFicha);
+        _logger.LogInformation("Consultando ficha técnica con ID {IdFicha}.", idFicha);
 
-            return fichaTecnica == null ? NotFound(new { Message = $"No se encontró la ficha técnica con ID {idFicha}." }) : Ok(fichaTecnica);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error al consultar la ficha técnica con ID {IdFicha}.", idFicha);
-            return StatusCode(500, new { Message = "Error interno del servidor." });
-        }
+        DTOs.FichaTecnicaDTO fichaTecnica = await _service.ObtenerFichaTecnicaCompletaAsync(idFicha);
+
+        return fichaTecnica == null ? NotFound(new { Message = $"No se encontró la ficha técnica con ID {idFicha}." }) : Ok(fichaTecnica);
+
+    }
+
+    [HttpGet("mecanicos")]
+    public async Task<IActionResult> ObtenerTodos()
+    {
+        _logger.LogInformation("Solicitando todos los mecánicos.");
+
+        var mecanicos = await _service.ObtenerTodosLosMecanicosAsync();
+        return Ok(mecanicos);
+
     }
 }
 

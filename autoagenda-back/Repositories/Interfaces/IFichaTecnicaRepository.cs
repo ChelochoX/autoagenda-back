@@ -7,4 +7,5 @@ public interface IFichaTecnicaRepository
 {
     Task<int> CrearFichaTecnicaAsync(FichaTecnicaRequest request);
     Task<FichaTecnicaDTO> ObtenerFichaTecnicaCompletaAsync(int idFicha);
+    Task<IEnumerable<MecanicoDTO>> ObtenerTodosLosMecanicosAsync();
 }

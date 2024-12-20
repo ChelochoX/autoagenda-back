@@ -23,33 +23,33 @@ public class FichaTecnicaRepository : IFichaTecnicaRepository
         _logger.LogInformation("Generando ficha técnica para la cita con ID: {IdCita}", request.IdCita);
 
         string checkQuery = @"
-    SELECT 
-        IdFicha 
-    FROM 
-        FichaTecnicaVehiculo WITH (UPDLOCK, HOLDLOCK)
-    WHERE 
-        IdCita = @IdCita";
+            SELECT 
+                IdFicha 
+            FROM 
+                FichaTecnicaVehiculo WITH (UPDLOCK, HOLDLOCK)
+            WHERE 
+                IdCita = @IdCita";
 
         string insertQuery = @"
-    INSERT INTO [FichaTecnicaVehiculo] (
-        IdCita, 
-        KilometrajeIngreso, 
-        KilometrajeProximo, 
-        DetallesServicio, 
-        MecanicoResponsable, 
-        Estado, 
-        FechaCreacion
-    )
-    VALUES (
-        @IdCita, 
-        @KilometrajeIngreso, 
-        @KilometrajeProximo, 
-        @DetallesServicio, 
-        @MecanicoResponsable, 
-        'En Proceso', 
-        GETDATE()
-    );
-    SELECT SCOPE_IDENTITY();";
+            INSERT INTO [FichaTecnicaVehiculo] (
+                IdCita, 
+                KilometrajeIngreso, 
+                KilometrajeProximo, 
+                DetallesServicio, 
+                MecanicoResponsable, 
+                Estado, 
+                FechaCreacion
+            )
+            VALUES (
+                @IdCita, 
+                @KilometrajeIngreso, 
+                @KilometrajeProximo, 
+                @DetallesServicio, 
+                @MecanicoResponsable, 
+                'En Proceso', 
+                GETDATE()
+            );
+            SELECT SCOPE_IDENTITY();";
 
         try
         {
@@ -94,7 +94,6 @@ public class FichaTecnicaRepository : IFichaTecnicaRepository
             throw new RepositoryException("Error al generar la ficha técnica.", ex);
         }
     }
-
 
     public async Task<FichaTecnicaDTO> ObtenerFichaTecnicaCompletaAsync(int idFicha)
     {
@@ -159,6 +158,39 @@ public class FichaTecnicaRepository : IFichaTecnicaRepository
         {
             _logger.LogError(ex, "Error al obtener los detalles de la ficha técnica con ID: {IdFicha}", idFicha);
             throw new RepositoryException("Error al obtener los detalles de la ficha técnica.", ex);
+        }
+    }
+
+    public async Task<IEnumerable<MecanicoDTO>> ObtenerTodosLosMecanicosAsync()
+    {
+        _logger.LogInformation("Inicio del proceso para obtener todos los mecánicos disponibles.");
+
+        string query = @"
+            SELECT 
+                IdMecanico,
+                Nombre,
+                Apellido,
+                Especialidad,
+                Telefono,
+                Email,
+                Estado
+            FROM Mecanicos
+            WHERE Estado = 1 -- Solo mecánicos activos
+            ORDER BY Nombre ASC";
+
+        try
+        {
+            using (var connection = _conexion.CreateSqlConnection())
+            {
+                var mecanicos = await connection.QueryAsync<MecanicoDTO>(query);
+                _logger.LogInformation("Se han obtenido {Cantidad} mecánicos.", mecanicos.Count());
+                return mecanicos;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al intentar obtener los mecánicos.");
+            throw new RepositoryException("Error al intentar obtener los mecánicos.", ex);
         }
     }
 }
