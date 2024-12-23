@@ -53,5 +53,15 @@ public class FichaTecnicaController : ControllerBase
         return Ok(mecanicos);
 
     }
+
+    [HttpGet("porcita/{idCita}")]
+    public async Task<IActionResult> ObtenerFichaTecnicaPorIdCita(int idCita)
+    {
+        _logger.LogInformation("Recibida solicitud para obtener ficha técnica por ID de cita: {IdCita}", idCita);
+
+        var fichaTecnica = await _service.ObtenerFichaTecnicaPorIdCitaAsync(idCita);
+        return Ok(fichaTecnica);
+
+    }
 }
 

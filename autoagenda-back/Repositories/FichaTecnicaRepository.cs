@@ -193,5 +193,72 @@ public class FichaTecnicaRepository : IFichaTecnicaRepository
             throw new RepositoryException("Error al intentar obtener los mecánicos.", ex);
         }
     }
+
+    public async Task<FichaTecnicaDTO> ObtenerFichaTecnicaPorIdCitaAsync(int idCita)
+    {
+        _logger.LogInformation("Obteniendo detalles completos de la ficha técnica asociada a la cita con ID: {IdCita}.", idCita);
+
+        string query = @"
+                SELECT 
+             -- Datos de la ficha técnica
+             ft.IdFicha,
+             ft.IdCita,
+             ft.KilometrajeIngreso,
+             ft.KilometrajeProximo,
+             ft.DetallesServicio,
+             ft.MecanicoResponsable,
+             ft.Estado,
+             ft.FechaCreacion,
+
+             -- Datos del vehículo
+             v.placa AS PlacaVehiculo,
+             v.id_marca AS IdMarca,
+             v.id_modelo AS IdModelo,
+             m.nombre AS NombreMarca,
+             mo.nombre AS NombreModelo,
+             a.anho AS AnhoVehiculo,
+
+             -- Datos del cliente
+             u.nombre_completo AS NombreCliente,
+             u.correo AS CorreoCliente,
+             u.telefono AS TelefonoCliente,
+
+             -- Datos adicionales de la cita
+             c.fecha AS FechaCita,
+             c.hora AS HoraCita,
+             ts.nombre AS TipoServicio,
+             ts.descripcion AS DescripcionServicio,
+             ts.costo AS CostoServicio
+
+         FROM [FichaTecnicaVehiculo] ft
+         INNER JOIN Citas c ON ft.IdCita = c.id_cita
+         INNER JOIN Vehiculos v ON c.id_vehiculo = v.id_vehiculo
+         INNER JOIN Modelos mo ON v.id_modelo = mo.id_modelo
+         INNER JOIN Marcas m ON mo.id_marca = m.id_marca
+         INNER JOIN Anhos a ON v.id_anho = a.id_anho -- Relación con el año del vehículo
+         INNER JOIN Usuarios u ON c.id_usuario = u.id_usuario
+         INNER JOIN TipoServicio ts ON c.id_tipo_servicio = ts.id_tipo_servicio
+         WHERE ft.IdCita = @IdCita";
+
+        try
+        {
+            using System.Data.IDbConnection connection = _conexion.CreateSqlConnection();
+            FichaTecnicaDTO? fichaTecnica = await connection.QueryFirstOrDefaultAsync<FichaTecnicaDTO>(query, new { IdCita = idCita });
+
+            if (fichaTecnica == null)
+            {
+                _logger.LogWarning("No se encontró la ficha técnica asociada a la cita con ID: {IdCita}.", idCita);
+                throw new KeyNotFoundException($"No se encontró la ficha técnica asociada a la cita con ID: {idCita}.");
+            }
+
+            return fichaTecnica;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener los detalles de la ficha técnica asociada a la cita con ID: {IdCita}", idCita);
+            throw new RepositoryException("Error al obtener los detalles de la ficha técnica.", ex);
+        }
+    }
+
 }
 
