@@ -15,35 +15,35 @@ public class CitasService : ICitasService
         _logger = logger;
     }
 
-    public async Task<int> InsertarCitaAsync(CitaDTO cita)
-    {     
-        var idCita = await _repository.InsertarCita(cita);
-      
-        return idCita;      
+    public async Task<int> InsertarCitaConDetallesAsync(CitaConDetallesDTO citaConDetalles)
+    {
+        var idCita = await _repository.InsertarCitaConDetallesAsync(citaConDetalles);
+
+        return idCita;
     }
 
     public async Task<CitaDTO> ObtenerCitaPorIdAsync(int idCita)
-    {       
+    {
         var cita = await _repository.ObtenerCitaPorId(idCita);
-           
-        return cita;        
+
+        return cita;
     }
 
     public async Task<IEnumerable<CitaDTO>> ObtenerCitasPorVehiculoAsync(int idVehiculo)
-    {      
-        var citas = await _repository.ObtenerCitasPorVehiculo(idVehiculo);          
-                       
-        return citas;       
+    {
+        var citas = await _repository.ObtenerCitasPorVehiculo(idVehiculo);
+
+        return citas;
     }
 
     public async Task ActualizarCitaAsync(int idCita, ActualizarCitaDTO citaActualizada)
-    {        
-        await _repository.ActualizarCitaAsync(idCita, citaActualizada);       
+    {
+        await _repository.ActualizarCitaAsync(idCita, citaActualizada);
     }
 
     public async Task EliminarCitaAsync(int idCita)
-    {     
-        await _repository.EliminarCita(idCita);      
+    {
+        await _repository.EliminarCita(idCita);
     }
 
     public async Task<CitaDetalleDTO> ObtenerDetalleCitaAsync(int idCita)
@@ -53,11 +53,11 @@ public class CitasService : ICitasService
 
     public async Task<IEnumerable<CitaDetalleDTO>> ObtenerCitasPorFechaYClienteAsync(DateTime fecha, int idusuario)
     {
-        return await _repository.ObtenerCitasPorFechaYClienteAsync(fecha,idusuario);
+        return await _repository.ObtenerCitasPorFechaYClienteAsync(fecha, idusuario);
     }
 
     public async Task ActualizarEstadoCitaAsync(int idCita, string estadoCita)
     {
-        await _repository.ActualizarEstadoCitaAsync(idCita,estadoCita);
+        await _repository.ActualizarEstadoCitaAsync(idCita, estadoCita);
     }
 }

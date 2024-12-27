@@ -20,24 +20,15 @@ public class CitasController : ControllerBase
 
     [HttpPost("crear")]
     [SwaggerOperation(
-        Summary = "Crea una nueva cita",
-        Description = "Permite registrar una nueva cita asociada a un vehículo y un tipo de servicio.")]
-    public async Task<IActionResult> InsertarCitaAsync([FromBody] CitaDTO cita)
+        Summary = "Crea una nueva cita con detalles",
+        Description = "Permite registrar una nueva cita asociada a un vehículo, incluyendo múltiples servicios.")]
+    public async Task<IActionResult> InsertarCitaConDetallesAsync([FromBody] CitaConDetallesDTO citaConDetalles)
     {
-        _logger.LogInformation("Solicitud para insertar una nueva cita.");
+        _logger.LogInformation("Solicitud para insertar una nueva cita con detalles.");
 
-        try
-        {
-            int idCita = await _service.InsertarCitaAsync(cita);
-            return Ok(new { mensaje = "Cita creada exitosamente.", idCita });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error al intentar insertar una cita.");
-            return StatusCode(500, new { mensaje = "Ocurrió un error al intentar insertar la cita." });
-        }
+        int idCita = await _service.InsertarCitaConDetallesAsync(citaConDetalles);
+        return Ok(new { mensaje = "Cita creada exitosamente con sus detalles.", idCita });
     }
-
 
     [HttpPut("{idCita}")]
     [SwaggerOperation(
@@ -57,16 +48,9 @@ public class CitasController : ControllerBase
     {
         _logger.LogInformation("Solicitud para eliminar la cita con ID: {IdCita}", idCita);
 
-        try
-        {
-            await _service.EliminarCitaAsync(idCita);
-            return Ok(new { mensaje = "Cita eliminada exitosamente." });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error al intentar eliminar la cita con ID: {IdCita}", idCita);
-            return StatusCode(500, new { mensaje = "Ocurrió un error al intentar eliminar la cita." });
-        }
+        await _service.EliminarCitaAsync(idCita);
+        return Ok(new { mensaje = "Cita eliminada exitosamente." });
+
     }
 
 
@@ -86,9 +70,14 @@ public class CitasController : ControllerBase
     Description = "Devuelve las citas de un cliente para una fecha específica, incluyendo información del vehículo y tipo de servicio.")]
     public async Task<IActionResult> ObtenerCitasPorFechaYClienteAsync([FromQuery] DateTime fecha, [FromQuery] int idUsuario)
     {
-        IEnumerable<CitaDetalleDTO> citas = await _service.ObtenerCitasPorFechaYClienteAsync(fecha, idUsuario);
+        var citas = await _service.ObtenerCitasPorFechaYClienteAsync(fecha, idUsuario);
 
-        return !citas.Any() ? NoContent() : Ok(citas);
+        if (citas == null || !citas.Any())
+        {
+            return NoContent(); // Retorna 204 si no hay citas
+        }
+
+        return Ok(citas);
     }
 
 

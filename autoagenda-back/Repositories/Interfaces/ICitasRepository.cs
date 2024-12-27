@@ -3,11 +3,11 @@
 namespace autoagenda_back.Repositories.Interfaces;
 
 public interface ICitasRepository
-{        
-    Task<int> InsertarCita(CitaDTO cita);
-    
+{
+    Task<int> InsertarCitaConDetallesAsync(CitaConDetallesDTO citaConDetalles);
+
     Task<CitaDTO> ObtenerCitaPorId(int idCita);
-   
+
     Task<IEnumerable<CitaDTO>> ObtenerCitasPorVehiculo(int idVehiculo);
 
     Task ActualizarCitaAsync(int idCita, ActualizarCitaDTO citaActualizada);

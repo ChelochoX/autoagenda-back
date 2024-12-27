@@ -17,30 +17,48 @@ public class CitasRepository : ICitasRepository
         _conexion = conexion;
     }
 
-    public async Task<int> InsertarCita(CitaDTO cita)
+    public async Task<int> InsertarCitaConDetallesAsync(CitaConDetallesDTO citaConDetalles)
     {
-        _logger.LogInformation("Inicio del proceso para insertar una nueva cita.");
+        _logger.LogInformation("Inicio del proceso para insertar una nueva cita con detalles.");
 
-        string query = @"
-                INSERT INTO Citas (id_vehiculo, fecha, hora, id_tipo_servicio, estado, descripcion, id_usuario)
-                VALUES (@IdVehiculo, @Fecha, @Hora, @IdTipoServicio, @Estado, @Descripcion, @IdUsuario);
-                SELECT CAST(SCOPE_IDENTITY() AS INT);";
-
-        try
+        using (var connection = _conexion.CreateSqlConnection())
         {
-            using (var connection = _conexion.CreateSqlConnection())
+            connection.Open();
+            using (var transaction = connection.BeginTransaction())
             {
-                var idCita = await connection.QuerySingleAsync<int>(query, cita);
-                _logger.LogInformation("Cita insertada exitosamente con ID: {IdCita}", idCita);
-                return idCita;
+                try
+                {
+                    // Inserción de la cita
+                    string queryCita = @"
+                    INSERT INTO Citas (id_vehiculo, fecha, hora, estado, id_usuario)
+                    VALUES (@IdVehiculo, @Fecha, @Hora, @Estado, @IdUsuario);
+                    SELECT CAST(SCOPE_IDENTITY() AS INT);";
+                    var idCita = await connection.QuerySingleAsync<int>(queryCita, citaConDetalles.Cita, transaction);
+
+                    // Inserción de los detalles
+                    string queryDetalle = @"
+                    INSERT INTO DetallesCita (id_cita, id_tipo_servicio, descripcion, precio_servicio)
+                    VALUES (@IdCita, @IdTipoServicio, @Descripcion, @PrecioServicio);";
+                    foreach (var detalle in citaConDetalles.DetallesCita)
+                    {
+                        detalle.IdCita = idCita; // Asignar el ID de la cita maestra
+                        await connection.ExecuteAsync(queryDetalle, detalle, transaction);
+                    }
+
+                    transaction.Commit();
+                    _logger.LogInformation("Cita con detalles insertada exitosamente con ID: {IdCita}", idCita);
+                    return idCita;
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    _logger.LogError(ex, "Error al insertar la cita con detalles.");
+                    throw new RepositoryException("Error al insertar la cita con detalles.", ex);
+                }
             }
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Ocurrió un error al insertar la cita.");
-            throw new RepositoryException("Error al insertar la cita.", ex);
-        }
     }
+
 
     public async Task<CitaDTO> ObtenerCitaPorId(int idCita)
     {
@@ -219,33 +237,56 @@ public class CitasRepository : ICitasRepository
     {
         _logger.LogInformation("Consultando las citas para el cliente {IdUsuario} en la fecha {Fecha}.", idUsuario, fecha);
 
-        string query = @"
+        string queryCitas = @"
                 SELECT 
-                    c.id_cita AS IdCita,                  -- Identificador único de la cita
-                    c.fecha AS Fecha,                    -- Fecha programada de la cita
-                    c.hora AS Hora,                      -- Hora programada de la cita
-                    c.estado AS Estado,                  -- Estado de la cita (pendiente, aprobado, rechazado)
-                    c.descripcion AS Descripcion,        -- Descripción adicional de la cita
-                    c.id_usuario AS IdUsuario,           -- Identificador del cliente asociado a la cita
-                    ts.nombre AS TipoServicio,           -- Tipo de servicio solicitado
-                    v.placa AS Placa,                    -- Placa del vehículo
-                    m.nombre AS Marca,                   -- Marca del vehículo
-                    mo.nombre AS Modelo,                 -- Modelo del vehículo
-                    a.anho AS Anho                       -- Año del vehículo
+                    c.id_cita AS IdCita,
+                    c.fecha AS Fecha,
+                    c.hora AS Hora,
+                    c.estado AS Estado,
+                    c.id_usuario AS IdUsuario,
+                    v.placa AS Placa,
+                    m.nombre AS Marca,
+                    mo.nombre AS Modelo,
+                    a.anho AS Anho
                 FROM Citas c
                 INNER JOIN Vehiculos v ON c.id_vehiculo = v.id_vehiculo
                 INNER JOIN Marcas m ON v.id_marca = m.id_marca
                 INNER JOIN Modelos mo ON v.id_modelo = mo.id_modelo
                 INNER JOIN Anhos a ON v.id_anho = a.id_anho
-                INNER JOIN TipoServicio ts ON c.id_tipo_servicio = ts.id_tipo_servicio
                 WHERE c.fecha = @Fecha AND c.id_usuario = @IdUsuario
                 ORDER BY c.hora";
+
+        string queryDetalles = @"
+                SELECT 
+                    d.id_cita AS IdCita,
+                    ts.nombre AS TipoServicio,
+                    d.descripcion AS Descripcion,
+                    d.precio_servicio AS PrecioServicio
+                FROM DetallesCita d
+                INNER JOIN TipoServicio ts ON d.id_tipo_servicio = ts.id_tipo_servicio
+                WHERE d.id_cita = @IdCita";
 
         try
         {
             using (var connection = _conexion.CreateSqlConnection())
             {
-                var citas = await connection.QueryAsync<CitaDetalleDTO>(query, new { Fecha = fecha.Date, IdUsuario= idUsuario });
+                // Obtener las citas principales
+                var citas = (await connection.QueryAsync<CitaDetalleDTO>(
+                    queryCitas,
+                    new { Fecha = fecha.Date, IdUsuario = idUsuario }
+                )).ToList();
+
+                // Obtener y asignar los detalles para cada cita
+                foreach (var cita in citas)
+                {
+                    var detalles = await connection.QueryAsync<DetalleCita>(
+                        queryDetalles,
+                        new { IdCita = cita.IdCita }
+                    );
+
+                    cita.DetallesCita = detalles.ToList();
+                }
+
                 return citas;
             }
         }
@@ -255,6 +296,8 @@ public class CitasRepository : ICitasRepository
             throw new RepositoryException("Error al obtener las citas.", ex);
         }
     }
+
+
 
     public async Task ActualizarEstadoCitaAsync(int idCita, string estadoCita)
     {
