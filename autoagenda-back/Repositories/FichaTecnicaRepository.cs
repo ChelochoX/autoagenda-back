@@ -1,18 +1,18 @@
-﻿using autoagenda_back.Data;
-using autoagenda_back.DTOs;
+﻿using autoagenda_back.DTOs;
 using autoagenda_back.Exceptions;
 using autoagenda_back.Repositories.Interfaces;
 using autoagenda_back.Request;
 using Dapper;
+using System.Data;
 
 namespace autoagenda_back.Repositories;
 
 public class FichaTecnicaRepository : IFichaTecnicaRepository
 {
-    private readonly DbConnections _conexion;
+    private readonly IDbConnection _conexion;
     private readonly ILogger<CitasRepository> _logger;
 
-    public FichaTecnicaRepository(ILogger<CitasRepository> logger, DbConnections conexion)
+    public FichaTecnicaRepository(ILogger<CitasRepository> logger, IDbConnection conexion)
     {
         _logger = logger;
         _conexion = conexion;
@@ -53,11 +53,17 @@ public class FichaTecnicaRepository : IFichaTecnicaRepository
 
         try
         {
-            using System.Data.IDbConnection connection = _conexion.CreateSqlConnection();
-            connection.Open();
-            using System.Data.IDbTransaction transaction = connection.BeginTransaction(System.Data.IsolationLevel.Serializable);
+            // Abrimos manualmente la conexión para que esté disponible durante toda la transacción
+            if (_conexion.State == ConnectionState.Closed)
+            {
+                _conexion.Open();
+            }
+
+            // Dapper abrirá y cerrará la conexión automáticamente
+            using IDbTransaction transaction = _conexion.BeginTransaction(System.Data.IsolationLevel.Serializable);
+
             // Verificar si ya existe la ficha técnica
-            int? fichaExistenteId = await connection.QueryFirstOrDefaultAsync<int?>(
+            int? fichaExistenteId = await _conexion.QueryFirstOrDefaultAsync<int?>(
                 checkQuery,
                 new { request.IdCita },
                 transaction
@@ -71,7 +77,7 @@ public class FichaTecnicaRepository : IFichaTecnicaRepository
             }
 
             // Insertar una nueva ficha técnica
-            int idFicha = await connection.ExecuteScalarAsync<int>(
+            int idFicha = await _conexion.ExecuteScalarAsync<int>(
                 insertQuery,
                 new
                 {
@@ -100,59 +106,80 @@ public class FichaTecnicaRepository : IFichaTecnicaRepository
         _logger.LogInformation("Obteniendo detalles completos de la ficha técnica con ID: {IdFicha}.", idFicha);
 
         string query = @"
-                       SELECT 
-                    -- Datos de la ficha técnica
-                    ft.IdFicha,
-                    ft.IdCita,
-                    ft.KilometrajeIngreso,
-                    ft.KilometrajeProximo,
-                    ft.DetallesServicio,
-                    ft.MecanicoResponsable,
-                    ft.Estado,
-                    ft.FechaCreacion,
+        SELECT 
+            -- Datos de la ficha técnica
+            ft.IdFicha,
+            ft.IdCita,
+            ft.KilometrajeIngreso,
+            ft.KilometrajeProximo,
+            ft.DetallesServicio,
+            ft.MecanicoResponsable,
+            ft.Estado,
+            ft.FechaCreacion,
 
-                    -- Datos del vehículo
-                    v.placa AS PlacaVehiculo,
-                    v.id_marca AS IdMarca,
-                    v.id_modelo AS IdModelo,
-                    m.nombre AS NombreMarca,
-                    mo.nombre AS NombreModelo,
-                    a.anho AS AnhoVehiculo,
+            -- Datos del vehículo
+            v.placa AS PlacaVehiculo,
+            v.id_marca AS IdMarca,
+            v.id_modelo AS IdModelo,
+            m.nombre AS NombreMarca,
+            mo.nombre AS NombreModelo,
+            a.anho AS AnhoVehiculo,
 
-                    -- Datos del cliente
-                    u.nombre_completo AS NombreCliente,
-                    u.correo AS CorreoCliente,
-                    u.telefono AS TelefonoCliente,
+            -- Datos del cliente
+            u.nombre_completo AS NombreCliente,
+            u.correo AS CorreoCliente,
+            u.telefono AS TelefonoCliente,
 
-                    -- Datos adicionales de la cita
-                    c.fecha AS FechaCita,
-                    c.hora AS HoraCita,
-                    ts.nombre AS TipoServicio,
-                    ts.descripcion AS DescripcionServicio,
-                    ts.costo AS CostoServicio
+            -- Datos adicionales de la cita
+            c.fecha AS FechaCita,
+            c.hora AS HoraCita,
+            dc.id_detallescita AS IdDetallesCita,
+            dc.descripcion AS DescripcionServicio,
+            dc.precio_servicio AS PrecioServicio,
+            ts.nombre AS TipoServicio
 
-                FROM [FichaTecnicaVehiculo] ft
-                INNER JOIN Citas c ON ft.IdCita = c.id_cita
-                INNER JOIN Vehiculos v ON c.id_vehiculo = v.id_vehiculo
-                INNER JOIN Modelos mo ON v.id_modelo = mo.id_modelo
-                INNER JOIN Marcas m ON mo.id_marca = m.id_marca
-                INNER JOIN Anhos a ON v.id_anho = a.id_anho -- Relación con el año del vehículo
-                INNER JOIN Usuarios u ON c.id_usuario = u.id_usuario
-                INNER JOIN TipoServicio ts ON c.id_tipo_servicio = ts.id_tipo_servicio
-                WHERE ft.IdFicha = @IdFicha";
+        FROM [FichaTecnicaVehiculo] ft
+        INNER JOIN Citas c ON ft.IdCita = c.id_cita
+        INNER JOIN Vehiculos v ON c.id_vehiculo = v.id_vehiculo
+        INNER JOIN Modelos mo ON v.id_modelo = mo.id_modelo
+        INNER JOIN Marcas m ON mo.id_marca = m.id_marca
+        INNER JOIN Anhos a ON v.id_anho = a.id_anho
+        INNER JOIN Usuarios u ON c.id_usuario = u.id_usuario
+        INNER JOIN DetallesCita dc ON c.id_cita = dc.id_cita
+        INNER JOIN TipoServicio ts ON dc.id_tipo_servicio = ts.id_tipo_servicio
+        WHERE ft.IdFicha = @IdFicha";
 
         try
         {
-            using System.Data.IDbConnection connection = _conexion.CreateSqlConnection();
-            FichaTecnicaDTO? fichaTecnica = await connection.QueryFirstOrDefaultAsync<FichaTecnicaDTO>(query, new { IdFicha = idFicha });
+            IEnumerable<FichaTecnicaDTO> fichaTecnica = await _conexion.QueryAsync<FichaTecnicaDTO, DetallesServicioDTO, FichaTecnicaDTO>(
+                query,
+                (ficha, detalle) =>
+                {
+                    ficha.DetallesServicios ??= [];
+                    ficha.DetallesServicios.Add(detalle);
+                    return ficha;
+                },
+                new { IdFicha = idFicha },
+                splitOn: "IdDetallesCita"
+            );
 
-            if (fichaTecnica == null)
+            FichaTecnicaDTO? fichaAgrupada = fichaTecnica
+                .GroupBy(f => f.IdFicha)
+                .Select(g =>
+                {
+                    FichaTecnicaDTO ficha = g.First();
+                    ficha.DetallesServicios = g.Select(f => f.DetallesServicios.FirstOrDefault()).ToList();
+                    return ficha;
+                })
+                .FirstOrDefault();
+
+            if (fichaAgrupada == null)
             {
                 _logger.LogWarning("No se encontró la ficha técnica con ID: {IdFicha}.", idFicha);
                 throw new KeyNotFoundException($"No se encontró la ficha técnica con ID: {idFicha}.");
             }
 
-            return fichaTecnica;
+            return fichaAgrupada;
         }
         catch (Exception ex)
         {
@@ -160,6 +187,7 @@ public class FichaTecnicaRepository : IFichaTecnicaRepository
             throw new RepositoryException("Error al obtener los detalles de la ficha técnica.", ex);
         }
     }
+
 
     public async Task<IEnumerable<MecanicoDTO>> ObtenerTodosLosMecanicosAsync()
     {
@@ -180,12 +208,9 @@ public class FichaTecnicaRepository : IFichaTecnicaRepository
 
         try
         {
-            using (var connection = _conexion.CreateSqlConnection())
-            {
-                var mecanicos = await connection.QueryAsync<MecanicoDTO>(query);
-                _logger.LogInformation("Se han obtenido {Cantidad} mecánicos.", mecanicos.Count());
-                return mecanicos;
-            }
+            IEnumerable<MecanicoDTO> mecanicos = await _conexion.QueryAsync<MecanicoDTO>(query);
+            _logger.LogInformation("Se han obtenido {Cantidad} mecánicos.", mecanicos.Count());
+            return mecanicos;
         }
         catch (Exception ex)
         {
@@ -199,59 +224,79 @@ public class FichaTecnicaRepository : IFichaTecnicaRepository
         _logger.LogInformation("Obteniendo detalles completos de la ficha técnica asociada a la cita con ID: {IdCita}.", idCita);
 
         string query = @"
-                SELECT 
-             -- Datos de la ficha técnica
-             ft.IdFicha,
-             ft.IdCita,
-             ft.KilometrajeIngreso,
-             ft.KilometrajeProximo,
-             ft.DetallesServicio,
-             ft.MecanicoResponsable,
-             ft.Estado,
-             ft.FechaCreacion,
-
-             -- Datos del vehículo
-             v.placa AS PlacaVehiculo,
-             v.id_marca AS IdMarca,
-             v.id_modelo AS IdModelo,
-             m.nombre AS NombreMarca,
-             mo.nombre AS NombreModelo,
-             a.anho AS AnhoVehiculo,
-
-             -- Datos del cliente
-             u.nombre_completo AS NombreCliente,
-             u.correo AS CorreoCliente,
-             u.telefono AS TelefonoCliente,
-
-             -- Datos adicionales de la cita
-             c.fecha AS FechaCita,
-             c.hora AS HoraCita,
-             ts.nombre AS TipoServicio,
-             ts.descripcion AS DescripcionServicio,
-             ts.costo AS CostoServicio
-
-         FROM [FichaTecnicaVehiculo] ft
-         INNER JOIN Citas c ON ft.IdCita = c.id_cita
-         INNER JOIN Vehiculos v ON c.id_vehiculo = v.id_vehiculo
-         INNER JOIN Modelos mo ON v.id_modelo = mo.id_modelo
-         INNER JOIN Marcas m ON mo.id_marca = m.id_marca
-         INNER JOIN Anhos a ON v.id_anho = a.id_anho -- Relación con el año del vehículo
-         INNER JOIN Usuarios u ON c.id_usuario = u.id_usuario
-         INNER JOIN TipoServicio ts ON c.id_tipo_servicio = ts.id_tipo_servicio
-         WHERE ft.IdCita = @IdCita";
+        SELECT 
+            ft.IdFicha,
+            ft.IdCita,
+            ft.KilometrajeIngreso,
+            ft.KilometrajeProximo,
+            ft.DetallesServicio,
+            ft.MecanicoResponsable,
+            ft.Estado,
+            ft.FechaCreacion,
+            v.placa AS PlacaVehiculo,
+            v.id_marca AS IdMarca,
+            v.id_modelo AS IdModelo,
+            m.nombre AS NombreMarca,
+            mo.nombre AS NombreModelo,
+            a.anho AS AnhoVehiculo,
+            u.nombre_completo AS NombreCliente,
+            u.correo AS CorreoCliente,
+            u.telefono AS TelefonoCliente,
+            c.fecha AS FechaCita,
+            c.hora AS HoraCita,
+            c.estado AS EstadoCita,
+            dc.id_detallescita AS IdDetallesCita,
+            dc.id_tipo_servicio AS IdTipoServicio,
+            ts.nombre AS TipoServicio,
+            dc.descripcion AS DescripcionServicio,
+            dc.precio_servicio AS PrecioServicio
+        FROM [FichaTecnicaVehiculo] ft
+        INNER JOIN Citas c ON ft.IdCita = c.id_cita
+        INNER JOIN Vehiculos v ON c.id_vehiculo = v.id_vehiculo
+        INNER JOIN Modelos mo ON v.id_modelo = mo.id_modelo
+        INNER JOIN Marcas m ON mo.id_marca = m.id_marca
+        INNER JOIN Anhos a ON v.id_anho = a.id_anho
+        INNER JOIN Usuarios u ON c.id_usuario = u.id_usuario
+        LEFT JOIN DetallesCita dc ON c.id_cita = dc.id_cita -- Cambiado a LEFT JOIN
+        LEFT JOIN TipoServicio ts ON dc.id_tipo_servicio = ts.id_tipo_servicio
+        WHERE ft.IdCita = @IdCita";
 
         try
         {
-            using System.Data.IDbConnection connection = _conexion.CreateSqlConnection();
-            FichaTecnicaDTO? fichaTecnica = await connection.QueryFirstOrDefaultAsync<FichaTecnicaDTO>(query, new { IdCita = idCita });
+            // Consulta y mapeo
+            IEnumerable<FichaTecnicaDTO> fichaTecnica = await _conexion.QueryAsync<FichaTecnicaDTO, DetallesServicioDTO, FichaTecnicaDTO>(
+                query,
+                (ficha, detalle) =>
+                {
+                    ficha.DetallesServicios ??= [];
+                    if (detalle != null && detalle.IdDetallesCita > 0)
+                    {
+                        ficha.DetallesServicios.Add(detalle);
+                    }
+                    return ficha;
+                },
+                new { IdCita = idCita },
+                splitOn: "IdDetallesCita"
+            );
 
-            if (fichaTecnica == null)
+            // Agrupación de servicios asociados
+            FichaTecnicaDTO? fichaAgrupada = fichaTecnica
+                .GroupBy(f => f.IdFicha)
+                .Select(g =>
+                {
+                    FichaTecnicaDTO ficha = g.First();
+                    ficha.DetallesServicios = g.Select(f => f.DetallesServicios.FirstOrDefault()).Where(d => d != null).ToList();
+                    return ficha;
+                })
+                .FirstOrDefault();
+
+            if (fichaAgrupada == null)
             {
                 _logger.LogWarning("No se encontró la ficha técnica asociada a la cita con ID: {IdCita}.", idCita);
                 throw new KeyNotFoundException($"No se encontró la ficha técnica asociada a la cita con ID: {idCita}.");
             }
 
-            return fichaTecnica;
+            return fichaAgrupada;
         }
         catch (Exception ex)
         {
@@ -259,6 +304,10 @@ public class FichaTecnicaRepository : IFichaTecnicaRepository
             throw new RepositoryException("Error al obtener los detalles de la ficha técnica.", ex);
         }
     }
+
+
+
+
 
 }
 

@@ -135,8 +135,7 @@ public class CitasRepository : ICitasRepository
         string query = @"
         UPDATE Citas
         SET
-            hora = @Hora,
-            descripcion = @Descripcion
+            hora = @Hora          
         WHERE id_cita = @IdCita";
 
         try
@@ -144,7 +143,6 @@ public class CitasRepository : ICitasRepository
             int filasAfectadas = await _conexion.ExecuteAsync(query, new
             {
                 citaActualizada.Hora,
-                citaActualizada.Descripcion,
                 idCita
             });
 
