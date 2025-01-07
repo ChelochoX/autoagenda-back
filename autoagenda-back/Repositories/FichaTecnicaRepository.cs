@@ -305,8 +305,53 @@ public class FichaTecnicaRepository : IFichaTecnicaRepository
         }
     }
 
+    public async Task ActualizarFichaTecnicaAsync(FichaTecnicaVehiculoDTO fichaTecnica)
+    {
+        _logger.LogInformation("Inicio del proceso para actualizar una ficha técnica con Id: {IdFicha}.", fichaTecnica.IdFicha);
 
+        string query = @"
+        UPDATE FichaTecnicaVehiculo
+        SET 
+            KilometrajeIngreso = @KilometrajeIngreso,
+            KilometrajeProximo = @KilometrajeProximo,
+            DetallesServicio = @DetallesServicio,
+            MecanicoResponsable = @MecanicoResponsable,
+            Estado = @Estado,
+            FechaCierre = @FechaCierre
+        WHERE IdFicha = @IdFicha";
 
+        try
+        {
+            // Asignar el estado y la fecha de cierre
+            fichaTecnica.Estado = "Finalizado en Proceso de Cobro";
+            fichaTecnica.FechaCierre = DateTime.Now;
+            // Ejecutamos la consulta directamente usando la conexión inyectada
+            int rowsAffected = await _conexion.ExecuteAsync(query, new
+            {
+                fichaTecnica.IdFicha,
+                fichaTecnica.KilometrajeIngreso,
+                fichaTecnica.KilometrajeProximo,
+                fichaTecnica.DetallesServicio,
+                fichaTecnica.MecanicoResponsable,
+                fichaTecnica.Estado,
+                fichaTecnica.FechaCierre
+            });
+
+            if (rowsAffected > 0)
+            {
+                _logger.LogInformation("Ficha técnica con Id: {IdFicha} actualizada correctamente.", fichaTecnica.IdFicha);
+            }
+            else
+            {
+                _logger.LogWarning("No se encontró una ficha técnica con Id: {IdFicha} para actualizar.", fichaTecnica.IdFicha);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al intentar actualizar la ficha técnica con Id: {IdFicha}.", fichaTecnica.IdFicha);
+            throw new RepositoryException("Error al intentar actualizar la ficha técnica.", ex);
+        }
+    }
 
 
 }

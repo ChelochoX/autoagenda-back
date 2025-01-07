@@ -41,4 +41,9 @@ public class FichaTecnicaService : IFichaTecnicaService
     {
         return await _repository.ObtenerFichaTecnicaPorIdCitaAsync(idCita);
     }
+
+    public async Task ActualizarFichaTecnicaAsync(FichaTecnicaVehiculoDTO fichaTecnica)
+    {
+        await _repository.ActualizarFichaTecnicaAsync(fichaTecnica);
+    }
 }

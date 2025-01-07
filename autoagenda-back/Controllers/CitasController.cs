@@ -70,14 +70,9 @@ public class CitasController : ControllerBase
     Description = "Devuelve las citas de un cliente para una fecha específica, incluyendo información del vehículo y tipo de servicio.")]
     public async Task<IActionResult> ObtenerCitasPorFechaYClienteAsync([FromQuery] DateTime fecha, [FromQuery] int idUsuario)
     {
-        var citas = await _service.ObtenerCitasPorFechaYClienteAsync(fecha, idUsuario);
+        IEnumerable<CitaDetalleDTO> citas = await _service.ObtenerCitasPorFechaYClienteAsync(fecha, idUsuario);
 
-        if (citas == null || !citas.Any())
-        {
-            return NoContent(); // Retorna 204 si no hay citas
-        }
-
-        return Ok(citas);
+        return citas == null || !citas.Any() ? Ok(new List<CitaDetalleDTO>()) : (IActionResult)Ok(citas);
     }
 
 
@@ -86,10 +81,9 @@ public class CitasController : ControllerBase
     {
         _logger.LogInformation("Iniciando actualización de estado de la cita con ID: {IdCita}", idCita);
 
-        if (string.IsNullOrWhiteSpace(estadoDTO) ||
-            (estadoDTO != "aprobado" && estadoDTO != "rechazado"))
+        if (string.IsNullOrWhiteSpace(estadoDTO))
         {
-            return BadRequest("El estado debe ser 'aprobado' o 'rechazado'.");
+            return BadRequest("El estado no debe estar vacio");
         }
 
         await _service.ActualizarEstadoCitaAsync(idCita, estadoDTO);

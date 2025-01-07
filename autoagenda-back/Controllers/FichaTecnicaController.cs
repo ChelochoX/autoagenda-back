@@ -1,4 +1,5 @@
-﻿using autoagenda_back.Request;
+﻿using autoagenda_back.DTOs;
+using autoagenda_back.Request;
 using autoagenda_back.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -49,7 +50,7 @@ public class FichaTecnicaController : ControllerBase
     {
         _logger.LogInformation("Solicitando todos los mecánicos.");
 
-        var mecanicos = await _service.ObtenerTodosLosMecanicosAsync();
+        IEnumerable<MecanicoDTO> mecanicos = await _service.ObtenerTodosLosMecanicosAsync();
         return Ok(mecanicos);
 
     }
@@ -59,9 +60,19 @@ public class FichaTecnicaController : ControllerBase
     {
         _logger.LogInformation("Recibida solicitud para obtener ficha técnica por ID de cita: {IdCita}", idCita);
 
-        var fichaTecnica = await _service.ObtenerFichaTecnicaPorIdCitaAsync(idCita);
+        FichaTecnicaDTO fichaTecnica = await _service.ObtenerFichaTecnicaPorIdCitaAsync(idCita);
         return Ok(fichaTecnica);
 
     }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> ActualizarFichaTecnica(int id, [FromBody] FichaTecnicaVehiculoDTO fichaTecnica)
+    {
+        _logger.LogInformation("Solicitud para actualizar la ficha técnica con Id: {IdFicha}.", fichaTecnica.IdFicha);
+
+        await _service.ActualizarFichaTecnicaAsync(fichaTecnica);
+        return Ok(new { Message = "Ficha técnica actualizada correctamente." });
+    }
+
 }
 

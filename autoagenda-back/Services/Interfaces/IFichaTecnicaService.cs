@@ -9,4 +9,5 @@ public interface IFichaTecnicaService
     Task<FichaTecnicaDTO> ObtenerFichaTecnicaCompletaAsync(int idFicha);
     Task<IEnumerable<MecanicoDTO>> ObtenerTodosLosMecanicosAsync();
     Task<FichaTecnicaDTO> ObtenerFichaTecnicaPorIdCitaAsync(int idCita);
+    Task ActualizarFichaTecnicaAsync(FichaTecnicaVehiculoDTO fichaTecnica);
 }
