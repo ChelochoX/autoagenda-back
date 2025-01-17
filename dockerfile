@@ -19,10 +19,10 @@ WORKDIR /app
 COPY --from=build /app/out .
 
 # Configurar ASP.NET Core para escuchar en el puerto 80
-ENV ASPNETCORE_URLS=http://+:80
+ENV ASPNETCORE_URLS=http://+:8081
 
 # Exponer el puerto 80
-EXPOSE 80
+EXPOSE 8081
 
 # Ejecutar la aplicación
 ENTRYPOINT ["dotnet", "autoagenda-back.dll"]
