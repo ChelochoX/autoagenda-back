@@ -49,7 +49,7 @@ logger.LogInformation("Aplicacion Iniciada Correctamente");
 
 app.UseCors("AllowFrontend");
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseAuthorization();
 app.UseHandlingMiddleware();
