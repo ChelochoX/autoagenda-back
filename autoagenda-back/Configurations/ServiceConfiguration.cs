@@ -17,16 +17,17 @@ public static class ServiceConfiguration
             return dbConnections.CreateSqlConnection();
         });
 
-        _ = services.AddCors(options =>
+        services.AddCors(options =>
         {
-            options.AddPolicy("AllowFrontend",
-                policy =>
-                {
-                    _ = policy.AllowAnyOrigin()
-                        .AllowAnyHeader()
-                        .AllowAnyMethod();
-                });
+            options.AddPolicy("AllowFrontend", policy =>
+            {
+                policy
+                    .AllowAnyOrigin()
+                    .AllowAnyMethod()
+                    .AllowAnyHeader();
+            });
         });
+
     }
 }
 
